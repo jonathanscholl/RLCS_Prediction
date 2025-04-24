@@ -3,15 +3,17 @@ import React, { useState } from 'react';
 
 function BracketRound({ title, matches, onMatchUpdate }) {
     return (
-        <div className="space-y-4 w-56">
-            <h3 className="text-sm font-semibold text-center mb-1">{title}</h3>
+        <div className="space-y-4 w-56 relative">
+            <div className="bg-gray-800 text-white py-1 px-2 text-center">
+                <h3 className="text-sm font-semibold mb-0">{title}</h3>
+            </div>
             {matches.map((match, index) => {
                 const [team1, team2, score1 = '', score2 = ''] = match;
 
                 return (
                     <div
                         key={index}
-                        className="bg-base-200 rounded-xl p-2 text-center shadow-md space-y-1"
+                        className="bg-gray-700 rounded p-2 text-center shadow-md space-y-1"
                     >
                         <div className="flex items-center justify-between gap-2">
                             <span className="font-bold text-left w-full">{team1}</span>
@@ -19,21 +21,21 @@ function BracketRound({ title, matches, onMatchUpdate }) {
                                 type="number"
                                 min="0"
                                 max="3"
-                                className="input input-bordered input-xs w-10"
+                                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 text-center w-10 bg-gray-600 text-white"
                                 value={score1}
                                 onChange={(e) =>
                                     onMatchUpdate(index, [team1, team2, e.target.value, score2])
                                 }
                             />
                         </div>
-                        <div className="text-sm text-neutral-content">vs</div>
+                        <div className="text-sm text-gray-400">vs</div>
                         <div className="flex items-center justify-between gap-2">
                             <span className="font-bold text-left w-full">{team2}</span>
                             <input
                                 type="number"
                                 min="0"
                                 max="3"
-                                className="input input-bordered input-xs w-10"
+                                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 text-center w-10 bg-gray-600 text-white"
                                 value={score2}
                                 onChange={(e) =>
                                     onMatchUpdate(index, [team1, team2, score1, e.target.value])
@@ -72,61 +74,76 @@ function BracketGrid({ groupKey, data, updateBracket }) {
                 advance('upperSemifinals', Math.floor(index / 2), winner, index % 2);
                 advance('lowerQuarterfinals', Math.floor(index / 2), loser, index % 2);
             } else if (round === 'upperSemifinals') {
-                advance('upperFinal', 0, winner, index % 2);
-                advance('lowerSemifinals', 0, loser, index);
-            } else if (round === 'upperFinal') {
-                // winner qualifies, loser goes to lowerFinal
-                advance('lowerFinal', 0, loser, 0);
+                advance('qualified', 0, winner, index % 2);
+                advance('lowerSemifinals', index === 0 ? 1 : 0, loser, 0);
+            } else if (round === 'qualified') {
+                return;
             } else if (round === 'lowerQuarterfinals') {
-                advance('lowerSemifinals', 0, winner, index);
-                // loser eliminated
+                advance('lowerSemifinals', index, winner, 1);
             } else if (round === 'lowerSemifinals') {
-                advance('lowerFinal', 0, winner, 1);
-                // loser eliminated
+                advance('lowerFinal', 0, winner, index);
             }
         }
     };
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-3 gap-6">
-                <BracketRound
-                    title="Upper QF (BO5)"
-                    matches={data.upperQuarterfinals}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', i, match)}
-                />
-                <BracketRound
-                    title="Upper SF (BO5)"
-                    matches={data.upperSemifinals}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('upperSemifinals', i, match)}
-                />
-                <BracketRound
-                    title="Upper Final (Qualified)"
-                    matches={data.upperFinal}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('upperFinal', i, match)}
-                />
+        <div className="flex flex-col gap-6 w-full mx-auto relative">
+            <div className="flex flex-row gap-20 my-auto items-center bg-primary">
+                <div className="items-center">
+                    <BracketRound
+                        title="UPPER QUARTERFINALS (BO5)"
+                        matches={data.upperQuarterfinals}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', i, match)}
+                    />
+                </div>
+
+                <div className="flex justify-center flex-grow"> {/* Use flex-grow to take up available space */}
+
+                    <BracketRound
+                        title="UPPER SEMIFINALS (BO5)"
+                        matches={data.upperSemifinals}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('upperSemifinals', i, match)}
+                    />
+
+                </div>
+
+                <div className="flex justify-center">
+                    <BracketRound
+                        title="QUALIFIED"
+                        matches={data.qualified}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('qualified', i, match)}
+                    />
+                </div>
             </div>
-            <div className="grid grid-cols-3 gap-6 mt-6">
-                <BracketRound
-                    title="Lower QF (BO5)"
-                    matches={data.lowerQuarterfinals}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
-                />
-                <BracketRound
-                    title="Lower SF (BO5)"
-                    matches={data.lowerSemifinals}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('lowerSemifinals', i, match)}
-                />
-                <BracketRound
-                    title="Lower Final (Qualified)"
-                    matches={data.lowerFinal}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('lowerFinal', i, match)}
-                />
+
+            <div className="flex flex-row gap-20 my-auto items-center bg-primary">
+                <div className="items-center">
+                    <BracketRound
+                        title="LOWER QUARTERFINALS (BO5)"
+                        matches={data.lowerQuarterfinals}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
+                    />
+
+                </div>
+                <div className='flex-grow items-center justify-center'>
+                    <BracketRound
+                        title="LOWER SEMIFINALS (BO5)"
+                        matches={data.lowerSemifinals}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('lowerSemifinals', i, match)}
+                    />
+                </div>
+
+                <div className="flex justify-center flex-grow">
+                    <BracketRound
+                        title="QUALIFIED"
+                        matches={data.lowerFinal}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('lowerFinal', i, match)}
+                    />
+                </div>
             </div>
-        </div>
+        </div >
     );
 }
-
 export default function TournamentBracket() {
     const [bracketData, setBracketData] = useState({
         groupA: {
@@ -137,9 +154,9 @@ export default function TournamentBracket() {
                 ['SPACESTATION', 'TEAM EVO'],
             ],
             upperSemifinals: [['', ''], ['', '']],
-            upperFinal: [['', '']],
+            qualified: [['', '']],
             lowerQuarterfinals: [['', ''], ['', '']],
-            lowerSemifinals: [['', '']],
+            lowerSemifinals: [['', ''], ['', '']],
             lowerFinal: [['', '']],
         },
         groupB: {
@@ -150,9 +167,9 @@ export default function TournamentBracket() {
                 ['THE BOYS', 'NAH'],
             ],
             upperSemifinals: [['', ''], ['', '']],
-            upperFinal: [['', '']],
+            qualified: [['', '']],
             lowerQuarterfinals: [['', ''], ['', '']],
-            lowerSemifinals: [['', '']],
+            lowerSemifinals: [['', ''], ['', '']],
             lowerFinal: [['', '']],
         },
     });
@@ -168,24 +185,28 @@ export default function TournamentBracket() {
     };
 
     return (
-        <div className="p-8">
+        <div className="p-8 bg-gray-800 text-white">
             <h1 className="text-3xl font-bold text-center mb-10">RLCS Bracket Predictions</h1>
             <div className="flex flex-row justify-center gap-16">
-                <div>
-                    <h2 className="text-xl font-semibold text-center mb-4">Group A</h2>
-                    <BracketGrid
-                        groupKey="groupA"
-                        data={bracketData.groupA}
-                        updateBracket={updateBracket}
-                    />
+                <div className='flex flex-col'>
+                    <h2 className="text-xl font-semibold text-center mb-6">GROUP A</h2>
+                    <div className='flex flex-row justify-center'>
+                        <BracketGrid
+                            groupKey="groupA"
+                            data={bracketData.groupA}
+                            updateBracket={updateBracket}
+                        />
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-xl font-semibold text-center mb-4">Group B</h2>
-                    <BracketGrid
-                        groupKey="groupB"
-                        data={bracketData.groupB}
-                        updateBracket={updateBracket}
-                    />
+                <div className="flex flex-col justify-center">
+                    <h2 className="text-xl font-semibold text-center mb-6">GROUP B</h2>
+                    <div className='flex flex-row justify-center'>
+                        <BracketGrid
+                            groupKey="groupB"
+                            data={bracketData.groupB}
+                            updateBracket={updateBracket}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
