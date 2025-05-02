@@ -18,7 +18,7 @@ export default function Home() {
             </ul>
           </div>
         </div>
-        <Link href="/bracket">
+        <Link href="/regions">
           <button className="mt-6 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 px-8 rounded-lg text-xl shadow-lg transition-all">
             Start Predicting!
           </button>
