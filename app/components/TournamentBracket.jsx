@@ -205,7 +205,13 @@ function BracketGrid({ groupKey, data, updateBracket }) {
 
             // Force update playoff brackets after any match completion
             setTimeout(() => {
-                updatePlayoffBrackets(data, updateBracket);
+                // Get the complete bracket data by looking at the parent component's props
+                const completeData = {
+                    groupA: groupKey === 'groupA' ? data : window.bracketData?.groupA,
+                    groupB: groupKey === 'groupB' ? data : window.bracketData?.groupB,
+                    playoffs: window.bracketData?.playoffs
+                };
+                updatePlayoffBrackets(completeData, updateBracket);
             }, 0);
         }
     };
@@ -609,6 +615,11 @@ function getStandingsFromBracket(bracketData) {
 export default function TournamentBracket({ bracketData, updateBracket }) {
     const standings = getStandingsFromBracket(bracketData);
     const championDetermined = Boolean(bracketData.playoffs.champion?.[0]?.[0]);
+
+    // Store the complete bracket data in window for access by child components
+    React.useEffect(() => {
+        window.bracketData = bracketData;
+    }, [bracketData]);
 
     return (
         <div className="p-8 bg-gray-800 text-white">
