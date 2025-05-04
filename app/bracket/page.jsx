@@ -7,10 +7,10 @@ import TournamentBracket from '../components/TournamentBracket';
 const initialNABracket = {
     groupA: {
         upperQuarterfinals: [
-            ['Gen.G', 'PWR RANGERS'],
-            ['REBELLION', 'STRICTLY BIZ'],
-            ['ULTIMATES', 'SIMTAWK+1'],
-            ['SPACESTATION', 'TEAM EVO'],
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['', ''],
         ],
         upperSemifinals: [['', ''], ['', '']],
         qualified: [['', '']],
@@ -20,10 +20,10 @@ const initialNABracket = {
     },
     groupB: {
         upperQuarterfinals: [
-            ['COMPLEXITY', 'DELETED'],
-            ['PIRATES', '9LIVES'],
-            ['NRG', 'WASSUP'],
-            ['THE BOYS', 'NAH'],
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['', ''],
         ],
         upperSemifinals: [['', ''], ['', '']],
         qualified: [['', '']],
@@ -84,6 +84,14 @@ const initialSAMBracket = JSON.parse(JSON.stringify(initialNABracket));
 const initialAPACBracket = JSON.parse(JSON.stringify(initialNABracket));
 const initialOCEBracket = JSON.parse(JSON.stringify(initialNABracket));
 
+const regionEventMap = {
+    NA: { event_id: 1, initial: initialNABracket },
+    EU: { event_id: 2, initial: initialEUBracket },
+    // Add more regions as needed
+    // MENA: { event_id: 3, initial: initialMENABracket },
+    // ...
+};
+
 const regionData = {
     NA: initialNABracket,
     EU: initialEUBracket,
@@ -97,15 +105,40 @@ export default function BracketPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const region = searchParams.get('region');
+    const region_id = regionEventMap[region]?.event_id;
     const [bracketData, setBracketData] = useState(null);
 
     useEffect(() => {
-        if (!region || !regionData[region]) {
-            router.replace('/regions');
-        } else {
-            setBracketData(regionData[region]);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (!region || !regionEventMap[region]) return;
+
+        const { event_id, initial } = regionEventMap[region];
+
+        fetch(`/api/matches?event_id=${event_id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data) && data.length >= 8) {
+                    const groupA = {
+                        ...initial.groupA,
+                        upperQuarterfinals: data.slice(0, 4).map(match => [
+                            match.team1_data?.name,
+                            match.team2_data?.name
+                        ])
+                    };
+                    const groupB = {
+                        ...initial.groupB,
+                        upperQuarterfinals: data.slice(4, 8).map(match => [
+                            match.team1_data?.name,
+                            match.team2_data?.name
+                        ])
+                    };
+                    setBracketData({
+                        ...initial,
+                        groupA,
+                        groupB
+                    });
+                }
+            })
+            .catch(err => console.error('Error fetching matches:', err));
     }, [region]);
 
     const updateBracket = (group, round, matches) => {

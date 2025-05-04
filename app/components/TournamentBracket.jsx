@@ -1,6 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import StandingsTable from './StandingsTable';
+import Image from "next/image";
+import nrg_logo from "@/public/nrg_logo.png"
 
 /**
  * Represents a single match in the tournament bracket
@@ -12,48 +14,49 @@ import StandingsTable from './StandingsTable';
  * @param {Function} props.onScoreChange - Callback when score changes
  */
 function Match({ team1, team2, score1 = '', score2 = '', onScoreChange }) {
-    // Determine if either team has won (reached 3 points)
-    const team1Won = parseInt(score1) === 3;
-    const team2Won = parseInt(score2) === 3;
-
-    // Calculate total score and check if it's valid
-    const totalScore = (parseInt(score1) || 0) + (parseInt(score2) || 0);
-    const isInvalidScore = totalScore > 5;
-
-    // Base input styles
-    const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 text-center w-10 text-white";
-
-    // Dynamic background color based on win status
-    const getInputStyles = (isWinner) => {
+    const team1Score = parseInt(score1);
+    const team2Score = parseInt(score2);
+    const team1Won = team1Score === 3;
+    const team2Won = team2Score === 3;
+    const matchComplete = (team1Won || team2Won) && (team1Score <= 3 && team2Score <= 3);
+    const placeholderLogo = "@/public/nrg_logo";
+    const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-9 h-9 text-black bg-white";
+    const getScoreBoxStyles = (isWinner) => {
         return `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
     };
-
+    // Determine row backgrounds
+    const team1Bg = matchComplete && team2Won ? '#3e3e3e' : '#2b95c6';
+    const team2Bg = matchComplete && team1Won ? '#3e3e3e' : '#d4500b';
     return (
-        <div className="bg-gray-700 rounded p-2 text-center shadow-md space-y-1">
-            <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-left w-full">{team1}</span>
+        <div className="space-y-2">
+
+            {/* Team 1 Row */}
+            <div className="flex items-center rounded overflow-hidden" style={{ background: team1Bg, color: team1Bg }}>
+                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
                 <input
                     type="number"
                     min="0"
                     max="3"
-                    className={getInputStyles(team1Won)}
+                    className={getScoreBoxStyles(team1Won) + ' ml-2'}
                     value={score1}
                     onChange={(e) => onScoreChange(0, e.target.value)}
                 />
             </div>
-            <div className="text-sm text-gray-400">vs</div>
-            <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-left w-full">{team2}</span>
+            {/* Team 2 Row */}
+            <div className="flex items-center rounded overflow-hidden" style={{ background: team2Bg, color: team2Bg }}>
+                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team2}</span>
                 <input
                     type="number"
                     min="0"
                     max="3"
-                    className={getInputStyles(team2Won)}
+                    className={getScoreBoxStyles(team2Won) + ' ml-2'}
                     value={score2}
                     onChange={(e) => onScoreChange(1, e.target.value)}
                 />
             </div>
-            {isInvalidScore && (
+            {((team1Score || 0) + (team2Score || 0) > 5) && (
                 <div className="text-red-500 text-sm mt-1">
                     Invalid score: Games are best of 5 (maximum 5 games total)
                 </div>
@@ -219,7 +222,7 @@ function BracketGrid({ groupKey, data, updateBracket }) {
     return (
         <div className="flex flex-col gap-6 w-full mx-auto relative">
             {/* Upper Bracket */}
-            <div className="flex flex-row gap-20 my-auto items-center bg-gray-500">
+            <div className="flex flex-row gap-20 my-auto items-center">
                 <BracketRound
                     title="UPPER QUARTERFINALS (BO5)"
                     matches={data.upperQuarterfinals}
@@ -242,7 +245,7 @@ function BracketGrid({ groupKey, data, updateBracket }) {
             </div>
 
             {/* Lower Bracket */}
-            <div className="flex flex-row gap-20 my-auto items-center bg-gray-500">
+            <div className="flex flex-row gap-20 my-auto items-center">
                 <BracketRound
                     title="LOWER QUARTERFINALS (BO5)"
                     matches={data.lowerQuarterfinals}
@@ -277,48 +280,46 @@ function BracketGrid({ groupKey, data, updateBracket }) {
  * @param {Function} props.onScoreChange - Callback when score changes
  */
 function PlayoffMatch({ team1, team2, score1 = '', score2 = '', onScoreChange }) {
-    // Determine if either team has won (reached 4 points)
-    const team1Won = parseInt(score1) === 4;
-    const team2Won = parseInt(score2) === 4;
-
-    // Calculate total score and check if it's valid
-    const totalScore = (parseInt(score1) || 0) + (parseInt(score2) || 0);
-    const isInvalidScore = totalScore > 7;
-
-    // Base input styles
-    const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 text-center w-10 text-white";
-
-    // Dynamic background color based on win status
-    const getInputStyles = (isWinner) => {
+    const team1Score = parseInt(score1);
+    const team2Score = parseInt(score2);
+    const team1Won = team1Score === 4;
+    const team2Won = team2Score === 4;
+    const matchComplete = (team1Won || team2Won) && (team1Score <= 4 && team2Score <= 4);
+    const placeholderLogo = '/placeholder-logo.png';
+    const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-9 h-9 text-black bg-white";
+    const getScoreBoxStyles = (isWinner) => {
         return `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
     };
-
+    const team1Bg = matchComplete && team2Won ? '#222' : '#2b95c6';
+    const team2Bg = matchComplete && team1Won ? '#222' : '#d4500b';
     return (
-        <div className="bg-gray-700 rounded p-2 text-center shadow-md space-y-1">
-            <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-left w-full">{team1}</span>
+        <div className="space-y-2">
+
+            <div className="flex items-center rounded overflow-hidden" style={{ background: team1Bg }}>
+                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
                 <input
                     type="number"
                     min="0"
                     max="4"
-                    className={getInputStyles(team1Won)}
+                    className={getScoreBoxStyles(team1Won) + ' ml-2'}
                     value={score1}
                     onChange={(e) => onScoreChange(0, e.target.value)}
                 />
             </div>
-            <div className="text-sm text-gray-400">vs</div>
-            <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-left w-full">{team2}</span>
+            <div className="flex items-center rounded overflow-hidden" style={{ background: team2Bg }}>
+                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team2}</span>
                 <input
                     type="number"
                     min="0"
                     max="4"
-                    className={getInputStyles(team2Won)}
+                    className={getScoreBoxStyles(team2Won) + ' ml-2'}
                     value={score2}
                     onChange={(e) => onScoreChange(1, e.target.value)}
                 />
             </div>
-            {isInvalidScore && (
+            {((team1Score || 0) + (team2Score || 0) > 7) && (
                 <div className="text-red-500 text-sm mt-1">
                     Invalid score: Games are best of 7 (maximum 7 games total)
                 </div>
@@ -478,7 +479,7 @@ function PlayoffBracket({ data, updateBracket }) {
     }
 
     return (
-        <div className="flex flex-row w-full justify-center items-center gap-8">
+        <div className="flex flex-row w-full justify-center items-center gap-12">
             {/* Lower Round 1 - far left */}
             <BracketColumn
                 label="LOWER ROUND 1 (BO7)"
@@ -499,7 +500,7 @@ function PlayoffBracket({ data, updateBracket }) {
                 />
             </div>
             {/* Semifinals, Grand Final, Champion - each in their own column */}
-            <div className="flex flex-row gap-8 items-center">
+            <div className="flex flex-row gap-12 items-center">
                 <BracketColumn
                     label="SEMIFINALS (TOP 4, BO7)"
                     matches={data.semifinals}
@@ -615,16 +616,47 @@ function getStandingsFromBracket(bracketData) {
 export default function TournamentBracket({ bracketData, updateBracket }) {
     const standings = getStandingsFromBracket(bracketData);
     const championDetermined = Boolean(bracketData.playoffs.champion?.[0]?.[0]);
+    const [activeView, setActiveView] = useState('overview'); // 'overview', 'groupA', 'groupB', 'playoffs'
 
     // Store the complete bracket data in window for access by child components
     React.useEffect(() => {
         window.bracketData = bracketData;
     }, [bracketData]);
 
-    return (
-        <div className="p-8 bg-gray-800 text-white">
-            <h1 className="text-3xl font-bold text-center mb-10">RLCS Bracket Predictions</h1>
+    const renderGroupA = () => (
+        <div className="flex flex-col">
+            <h2 className="text-xl font-semibold text-center mb-6">GROUP A</h2>
+            <div className="flex flex-row justify-center">
+                <BracketGrid
+                    groupKey="groupA"
+                    data={bracketData.groupA}
+                    updateBracket={updateBracket}
+                />
+            </div>
+        </div>
+    );
 
+    const renderGroupB = () => (
+        <div className="flex flex-col justify-center">
+            <h2 className="text-xl font-semibold text-center mb-6">GROUP B</h2>
+            <div className="flex flex-row justify-center">
+                <BracketGrid
+                    groupKey="groupB"
+                    data={bracketData.groupB}
+                    updateBracket={updateBracket}
+                />
+            </div>
+        </div>
+    );
+
+    const renderPlayoffs = () => (
+        <div className="flex-1">
+            <PlayoffBracket data={bracketData.playoffs} updateBracket={updateBracket} />
+        </div>
+    );
+
+    const renderOverview = () => (
+        <>
             {/* Group Stage */}
             <div className="flex flex-row justify-center gap-16 mb-16">
                 {/* Group A Bracket */}
@@ -661,6 +693,50 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
                     {championDetermined && <StandingsTable standings={standings} />}
                 </div>
             </div>
+        </>
+    );
+
+    return (
+        <div className="p-8 bg-gray-800 text-white">
+            <div className="flex justify-between items-center mb-10">
+                <h1 className="text-3xl font-bold text-center flex-1">RLCS Bracket Predictions</h1>
+                {activeView !== 'overview' && (
+                    <button
+                        onClick={() => setActiveView('overview')}
+                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Back to Overview
+                    </button>
+                )}
+            </div>
+
+            {activeView === 'overview' && renderOverview()}
+            {activeView === 'groupA' && renderGroupA()}
+            {activeView === 'groupB' && renderGroupB()}
+            {activeView === 'playoffs' && renderPlayoffs()}
+
+            {activeView === 'overview' && (
+                <div className="flex justify-center gap-4 mt-8">
+                    <button
+                        onClick={() => setActiveView('groupA')}
+                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Zoom Group A
+                    </button>
+                    <button
+                        onClick={() => setActiveView('groupB')}
+                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Zoom Group B
+                    </button>
+                    <button
+                        onClick={() => setActiveView('playoffs')}
+                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Zoom Playoffs
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
