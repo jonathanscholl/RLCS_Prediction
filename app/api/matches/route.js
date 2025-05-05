@@ -14,11 +14,13 @@ export async function GET(req) {
     event_id,
     team1_data:teams!fk_team1 (
       id,
-      name
+      name,
+      logo
     ),
     team2_data:teams!fk_team2 (
       id,
-      name
+      name,
+      logo
     )
   `
     )

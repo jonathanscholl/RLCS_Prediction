@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TournamentBracket from '../components/TournamentBracket';
 
-const initialNABracket = {
+const initialBracket = {
     groupA: {
         upperQuarterfinals: [
             ['', ''],
@@ -12,10 +12,10 @@ const initialNABracket = {
             ['', ''],
             ['', ''],
         ],
-        upperSemifinals: [['', ''], ['', '']],
-        qualified: [['', '']],
-        lowerQuarterfinals: [['', ''], ['', '']],
-        lowerSemifinals: [['', ''], ['', '']],
+        upperSemifinals: [[['Winner of UPQF1', ''], ['Winner of UPQF2', '']], [['Winner of UPQF3', ''], ['Winner of UPQF3', '']]],
+        qualified: [['Winner of Semifinals 1', 'Winner of Semifinals 2']],
+        lowerQuarterfinals: [['Loser of UPQF1', 'Loser of UPQF2'], ['Loser of UPQF3', 'Loser of UPQF3']],
+        lowerSemifinals: [['Loser of Semifinals 1', 'Winner of LQF1'], ['Loser of Semifinals 2', 'Winner of LQF2']],
         lowerFinal: [['', '']],
     },
     groupB: {
@@ -25,7 +25,7 @@ const initialNABracket = {
             ['', ''],
             ['', ''],
         ],
-        upperSemifinals: [['', ''], ['', '']],
+        upperSemifinals: [[['', ''], ['', '']], [['', ''], ['', '']]],
         qualified: [['', '']],
         lowerQuarterfinals: [['', ''], ['', '']],
         lowerSemifinals: [['', ''], ['', '']],
@@ -41,65 +41,17 @@ const initialNABracket = {
     },
 };
 
-const initialEUBracket = {
-    groupA: {
-        upperQuarterfinals: [
-            ['Dignitas', '100%'],
-            ['Karmine Corp', 'Vitality'],
-            ['ULTIMATES', 'SIMTAWK+1'],
-            ['SPACESTATION', 'TEAM EVO'],
-        ],
-        upperSemifinals: [['', ''], ['', '']],
-        qualified: [['', '']],
-        lowerQuarterfinals: [['', ''], ['', '']],
-        lowerSemifinals: [['', ''], ['', '']],
-        lowerFinal: [['', '']],
-    },
-    groupB: {
-        upperQuarterfinals: [
-            ['COMPLEXITY', 'DELETED'],
-            ['PIRATES', '9LIVES'],
-            ['NRG', 'WASSUP'],
-            ['THE BOYS', 'NAH'],
-        ],
-        upperSemifinals: [['', ''], ['', '']],
-        qualified: [['', '']],
-        lowerQuarterfinals: [['', ''], ['', '']],
-        lowerSemifinals: [['', ''], ['', '']],
-        lowerFinal: [['', '']],
-    },
-    playoffs: {
-        lowerRound1: [['', ''], ['', '']],
-        upperQuarterfinals: [['', ''], ['', '']],
-        lowerQuarterfinals: [['', ''], ['', '']],
-        semifinals: [['', ''], ['', '']],
-        grandFinal: [['', '']],
-        champion: [['']],
-    },
-};
 
-// Use NA teams as placeholder for other regions
-const initialMENABracket = JSON.parse(JSON.stringify(initialNABracket));
-const initialSAMBracket = JSON.parse(JSON.stringify(initialNABracket));
-const initialAPACBracket = JSON.parse(JSON.stringify(initialNABracket));
-const initialOCEBracket = JSON.parse(JSON.stringify(initialNABracket));
 
 const regionEventMap = {
-    NA: { event_id: 1, initial: initialNABracket },
-    EU: { event_id: 2, initial: initialEUBracket },
+    NA: { event_id: 1, initial: initialBracket },
+    EU: { event_id: 2, initial: initialBracket },
+    MENA: { event_id: 3, initial: initialBracket },
     // Add more regions as needed
     // MENA: { event_id: 3, initial: initialMENABracket },
     // ...
 };
 
-const regionData = {
-    NA: initialNABracket,
-    EU: initialEUBracket,
-    MENA: initialMENABracket,
-    SAM: initialSAMBracket,
-    APAC: initialAPACBracket,
-    OCE: initialOCEBracket,
-};
 
 export default function BracketPage() {
     const router = useRouter();
@@ -121,21 +73,33 @@ export default function BracketPage() {
                         ...initial.groupA,
                         upperQuarterfinals: data.slice(0, 4).map(match => [
                             match.team1_data?.name,
-                            match.team2_data?.name
+                            match.team2_data?.name,
+                            match.team1_data?.logo,
+                            match.team2_data?.logo,
+                            '', // initial score1
+                            ''  // initial score2
                         ])
                     };
                     const groupB = {
                         ...initial.groupB,
                         upperQuarterfinals: data.slice(4, 8).map(match => [
                             match.team1_data?.name,
-                            match.team2_data?.name
+                            match.team2_data?.name,
+                            match.team1_data?.logo,
+                            match.team2_data?.logo,
+                            '', // initial score1
+                            ''  // initial score2
                         ])
+
+
                     };
                     setBracketData({
                         ...initial,
                         groupA,
                         groupB
                     });
+
+                    console.log(groupA)
                 }
             })
             .catch(err => console.error('Error fetching matches:', err));

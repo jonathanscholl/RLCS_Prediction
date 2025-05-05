@@ -9,17 +9,27 @@ import nrg_logo from "@/public/nrg_logo.png"
  * @param {Object} props
  * @param {string} props.team1 - First team name
  * @param {string} props.team2 - Second team name
+ * @param {string} props.team1Logo - First team's logo
+ * @param {string} props.team2Logo
  * @param {string} props.score1 - First team's score
  * @param {string} props.score2 - Second team's score
  * @param {Function} props.onScoreChange - Callback when score changes
  */
-function Match({ team1, team2, score1 = '', score2 = '', onScoreChange }) {
+function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange }) {
+
+
+
+    console.log(team1Logo)
     const team1Score = parseInt(score1);
     const team2Score = parseInt(score2);
     const team1Won = team1Score === 3;
     const team2Won = team2Score === 3;
+
+    const placeholderLogo = 'https://kclzskvpikbsdoufynvo.supabase.co/storage/v1/object/public/logos/Placeholder.png';
+
+    const logo1 = team1Logo ? team1Logo : placeholderLogo;
+    const logo2 = team2Logo ? team2Logo : placeholderLogo;
     const matchComplete = (team1Won || team2Won) && (team1Score <= 3 && team2Score <= 3);
-    const placeholderLogo = "@/public/nrg_logo";
     const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-9 h-9 text-black bg-white";
     const getScoreBoxStyles = (isWinner) => {
         return `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
@@ -27,12 +37,13 @@ function Match({ team1, team2, score1 = '', score2 = '', onScoreChange }) {
     // Determine row backgrounds
     const team1Bg = matchComplete && team2Won ? '#3e3e3e' : '#2b95c6';
     const team2Bg = matchComplete && team1Won ? '#3e3e3e' : '#d4500b';
+
     return (
         <div className="space-y-2">
 
             {/* Team 1 Row */}
             <div className="flex items-center rounded overflow-hidden" style={{ background: team1Bg, color: team1Bg }}>
-                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <img src={logo1} alt="Team logo" width={32} height={32} className="w-8 h-8 object-contain bg-transparent rounded-full m-2" />
                 <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
                 <input
                     type="number"
@@ -45,7 +56,7 @@ function Match({ team1, team2, score1 = '', score2 = '', onScoreChange }) {
             </div>
             {/* Team 2 Row */}
             <div className="flex items-center rounded overflow-hidden" style={{ background: team2Bg, color: team2Bg }}>
-                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <Image src={logo2} alt="team 2 logo" width={32} height={32} className="w-8 h-8 object-contain bg-transparent rounded-full m-2" />
                 <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team2}</span>
                 <input
                     type="number"
@@ -83,11 +94,14 @@ function BracketRound({ title, matches, onMatchUpdate }) {
                     key={index}
                     team1={match[0]}
                     team2={match[1]}
-                    score1={match[2]}
-                    score2={match[3]}
+                    team1Logo={match[2]}
+                    team2Logo={match[3]}
+                    score1={match[4]}
+                    score2={match[5]}
                     onScoreChange={(teamIndex, newScore) => {
                         const newMatch = [...match];
-                        newMatch[teamIndex + 2] = newScore;
+                        newMatch[teamIndex + 4] = newScore;
+
                         onMatchUpdate(index, newMatch);
                     }}
                 />
@@ -150,7 +164,7 @@ function updatePlayoffBrackets(data, updateBracket) {
  */
 function advanceTeam(data, groupKey, round, index, winner, loser, updateBracket) {
     const advance = (targetRound, matchIndex, team, position) => {
-        const newRound = [...data[targetRound]];
+        const newRound = [...(data[targetRound] || [])];
         newRound[matchIndex] = newRound[matchIndex] || ['', ''];
         newRound[matchIndex][position] = team;
         updateBracket(groupKey, targetRound, newRound);
@@ -196,9 +210,13 @@ function BracketGrid({ groupKey, data, updateBracket }) {
         updated[index] = newMatch;
         updateBracket(groupKey, round, updated);
 
-        const [team1, team2, score1, score2] = newMatch;
+        const [team1, team2, logo1, logo2, score1, score2] = newMatch;
+
+        console.log(newMatch, "blub")
+        console.log(logo1)
         const s1 = parseInt(score1);
         const s2 = parseInt(score2);
+
 
         // Check if match is complete (best of 5)
         if ((s1 === 3 || s2 === 3) && (s1 <= 3 && s2 <= 3)) {
@@ -346,8 +364,10 @@ function PlayoffRound({ title, matches, onMatchUpdate }) {
                     key={index}
                     team1={match[0]}
                     team2={match[1]}
-                    score1={match[2]}
-                    score2={match[3]}
+                    team1Logo={match[3]}
+                    team2Logo={match[4]}
+                    score1={match[4]}
+                    score2={match[5]}
                     onScoreChange={(teamIndex, newScore) => {
                         const newMatch = [...match];
                         newMatch[teamIndex + 2] = newScore;
@@ -464,8 +484,10 @@ function PlayoffBracket({ data, updateBracket }) {
                             key={idx}
                             team1={match[0]}
                             team2={match[1]}
-                            score1={match[2]}
-                            score2={match[3]}
+                            team1Logo={match[3]}
+                            team2Logo={match[4]}
+                            score1={match[4]}
+                            score2={match[5]}
                             onScoreChange={(teamIndex, newScore) => {
                                 const newMatch = [...match];
                                 newMatch[teamIndex + 2] = newScore;
@@ -621,6 +643,7 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
     // Store the complete bracket data in window for access by child components
     React.useEffect(() => {
         window.bracketData = bracketData;
+        console.log(bracketData)
     }, [bracketData]);
 
     const renderGroupA = () => (
@@ -661,7 +684,12 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
             <div className="flex flex-row justify-center gap-16 mb-16">
                 {/* Group A Bracket */}
                 <div className="flex flex-col">
-                    <h2 className="text-xl font-semibold text-center mb-6">GROUP A</h2>
+                    <h2 className="text-xl font-semibold text-center mb-6">                    <button
+                        onClick={() => setActiveView('groupA')}
+                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Group A
+                    </button></h2>
                     <div className="flex flex-row justify-center">
                         <BracketGrid
                             groupKey="groupA"
