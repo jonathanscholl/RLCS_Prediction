@@ -124,14 +124,19 @@ export default function BracketPage() {
     if (!bracketData) return null;
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white p-4">
-            <button
-                className="mb-8 px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                onClick={() => router.push('/regions')}
-            >
-                &larr; Go Back
-            </button>
-            <TournamentBracket bracketData={bracketData} updateBracket={updateBracket} />
+
+        <div className="relative">
+            <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+                style={{ backgroundImage: 'url("background.png")' }}
+            />
+
+            <div className="min-h-screen text-white p-4">
+
+                <TournamentBracket bracketData={bracketData} updateBracket={updateBracket} />
+            </div>
+
         </div>
+
     );
 } 

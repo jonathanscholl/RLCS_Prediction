@@ -16,10 +16,6 @@ import Image from "next/image";
  * @param {Function} props.onScoreChange - Callback when score changes
  */
 function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange }) {
-
-
-
-    console.log(team1Logo)
     const team1Score = parseInt(score1);
     const team2Score = parseInt(score2);
     const team1Won = team1Score === 3;
@@ -27,47 +23,71 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
 
     const placeholderLogo = 'https://kclzskvpikbsdoufynvo.supabase.co/storage/v1/object/public/logos/Placeholder.png';
 
-    const logo1 = team1Logo ? team1Logo : placeholderLogo;
-    const logo2 = team2Logo ? team2Logo : placeholderLogo;
+    const logo1 = team1Logo || placeholderLogo;
+    const logo2 = team2Logo || placeholderLogo;
     const matchComplete = (team1Won || team2Won) && (team1Score <= 3 && team2Score <= 3);
-    const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-9 h-9 text-black bg-white";
-    const getScoreBoxStyles = (isWinner) => {
-        return `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
-    };
-    // Determine row backgrounds
-    const team1Bg = matchComplete && team2Won ? '#3e3e3e' : '#2b95c6';
-    const team2Bg = matchComplete && team1Won ? '#3e3e3e' : '#d4500b';
+
+    const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-15 h-15 text-black bg-white";
+    const getScoreBoxStyles = (isWinner) => `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
+    const teamLost = (won) => matchComplete && !won;
+
+    const team1Bg = '#2b95c6';
+    const team2Bg = '#d4500b';
 
     return (
         <div className="space-y-2">
-
             {/* Team 1 Row */}
-            <div className="flex items-center rounded overflow-hidden" style={{ background: team1Bg, color: team1Bg }}>
-                <img src={logo1} alt="Team logo" width={32} height={32} className="w-8 h-8 object-contain bg-transparent rounded-full m-2" />
-                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
+            <div className={`flex flex-row items-center space-x-2 w-[300px] transition-all duration-300 ${teamLost(team1Won) ? 'opacity-60 grayscale' : ''}`}>
+                <div className="w-16 h-16 bg-black flex items-center justify-center">
+                    <img
+                        src={logo1}
+                        alt="Team 1 logo"
+                        className={`w-12 h-12 object-contain transition-all ${teamLost(team1Won) ? 'opacity-50 scale-90' : ''}`}
+                    />
+                </div>
+                <div className={`flex items-center rounded w-40 h-16 px-2 relative transition-colors`} style={{ background: team1Bg }}>
+                    <span className={`font-bold text-white text-sm tracking-wide truncate flex items-center`}>
+                        {team1}
+                    </span>
+                    {teamLost(team1Won) && <div className="absolute inset-0 bg-opacity-30 rounded" />}
+                </div>
                 <input
                     type="number"
                     min="0"
                     max="3"
-                    className={getScoreBoxStyles(team1Won) + ' ml-2'}
+                    className={`w-16 h-16 text-center ${getScoreBoxStyles(team1Won)}`}
                     value={score1}
                     onChange={(e) => onScoreChange(0, e.target.value)}
                 />
             </div>
+
             {/* Team 2 Row */}
-            <div className="flex items-center rounded overflow-hidden" style={{ background: team2Bg, color: team2Bg }}>
-                <Image src={logo2} alt="team 2 logo" width={32} height={32} className="w-8 h-8 object-contain bg-transparent rounded-full m-2" />
-                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team2}</span>
+            <div className={`flex flex-row items-center space-x-2 w-[300px] transition-all duration-300 ${teamLost(team2Won) ? 'opacity-60 grayscale' : ''}`}>
+                <div className="w-16 h-16 bg-black flex items-center justify-center">
+                    <img
+                        src={logo2}
+                        alt="Team 2 logo"
+                        className={`w-12 h-12 object-contain transition-all ${teamLost(team2Won) ? 'opacity-50 scale-90' : ''}`}
+                    />
+                </div>
+                <div className={`flex items-center rounded w-40 h-16 px-2 relative transition-colors`} style={{ background: team2Bg }}>
+                    <span className={`font-bold text-white text-sm tracking-wide truncate flex items-center`}>
+                        {team2}
+                    </span>
+                    {teamLost(team2Won) && <div className="absolute inset-0 bg-opacity-30 rounded" />}
+                </div>
                 <input
                     type="number"
                     min="0"
                     max="3"
-                    className={getScoreBoxStyles(team2Won) + ' ml-2'}
+                    className={`w-16 h-16 text-center ${getScoreBoxStyles(team2Won)}`}
                     value={score2}
                     onChange={(e) => onScoreChange(1, e.target.value)}
                 />
             </div>
-            {((team1Score || 0) + (team2Score || 0) > 5) && (
+
+            {/* Validation Message */}
+            {(team1Score + team2Score > 5) && (
                 <div className="text-red-500 text-sm mt-1">
                     Invalid score: Games are best of 5 (maximum 5 games total)
                 </div>
@@ -75,6 +95,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
         </div>
     );
 }
+
 
 /**
  * Represents a round in the tournament bracket (e.g., Quarterfinals, Semifinals)
@@ -85,8 +106,8 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
  */
 function BracketRound({ title, matches, onMatchUpdate }) {
     return (
-        <div className="space-y-4 w-56 relative">
-            <div className="bg-gray-800 text-white py-1 px-2 text-center">
+        <div className="space-y-4">
+            <div className="bg-gray-900 text-white py-1 px-2 text-center">
                 <h3 className="text-sm font-semibold mb-0">{title}</h3>
             </div>
             {matches.map((match, index) => (
@@ -249,9 +270,9 @@ function BracketGrid({ groupKey, data, updateBracket }) {
     };
 
     return (
-        <div className="flex flex-col gap-6 w-full mx-auto relative">
+        <div className="flex flex-col gap-6 w-full">
             {/* Upper Bracket */}
-            <div className="flex flex-row gap-20 my-auto items-center">
+            <div className="flex flex-row my-auto items-center">
                 <BracketRound
                     title="UPPER QUARTERFINALS (BO5)"
                     matches={data.upperQuarterfinals}
@@ -274,20 +295,20 @@ function BracketGrid({ groupKey, data, updateBracket }) {
             </div>
 
             {/* Lower Bracket */}
-            <div className="flex flex-row gap-20 my-auto items-center">
+            <div className="flex flex-row my-20 items-center">
                 <BracketRound
                     title="LOWER QUARTERFINALS (BO5)"
                     matches={data.lowerQuarterfinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
                 />
-                <div className="flex-grow items-center justify-center">
+                <div className="flex justify-center flex-grow">
                     <BracketRound
                         title="LOWER SEMIFINALS (BO5)"
                         matches={data.lowerSemifinals}
                         onMatchUpdate={(i, match) => handleMatchUpdate('lowerSemifinals', i, match)}
                     />
                 </div>
-                <div className="flex justify-center flex-grow">
+                <div className="flex justify-center">
                     <BracketRound
                         title="QUALIFIED"
                         matches={data.lowerFinal}
@@ -319,14 +340,14 @@ function PlayoffMatch({ team1, team2, score1 = '', score2 = '', onScoreChange })
     const getScoreBoxStyles = (isWinner) => {
         return `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
     };
-    const team1Bg = matchComplete && team2Won ? '#222' : '#2b95c6';
-    const team2Bg = matchComplete && team1Won ? '#222' : '#d4500b';
+    const team1Bg = '#2b95c6';
+    const team2Bg = '#d4500b';
     return (
         <div className="space-y-2">
 
             <div className="flex items-center rounded overflow-hidden" style={{ background: team1Bg }}>
                 <Image src={placeholderLogo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
-                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
+                <span className="font-extrabold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
                 <input
                     type="number"
                     min="0"
@@ -658,7 +679,7 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
     }, [bracketData]);
 
     const renderGroupA = () => (
-        <div className="flex flex-col">
+        <div className="flex flex-col mx-10">
             <h2 className="text-xl font-semibold text-center mb-6">GROUP A</h2>
             <div className="flex flex-row justify-center">
                 <BracketGrid
@@ -671,7 +692,7 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
     );
 
     const renderGroupB = () => (
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col mx-10">
             <h2 className="text-xl font-semibold text-center mb-6">GROUP B</h2>
             <div className="flex flex-row justify-center">
                 <BracketGrid
@@ -692,53 +713,58 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
     const renderOverview = () => (
         <>
             {/* Group Stage */}
+
+            <div className="flex justify-between items-center mb-10">
+                <h1 className="text-3xl font-bold text-center flex-1">RLCS Bracket Predictions</h1>
+
+            </div>
             <div className="flex flex-row justify-center gap-16 mb-16">
+
+
                 {/* Group A Bracket */}
-                <div className="flex flex-col">
-                    <h2 className="text-xl font-semibold text-center mb-6">                    <button
+
+                <h2 className="text-xl font-semibold text-center mb-6">
+
+                    <button
                         onClick={() => setActiveView('groupA')}
                         className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
                     >
                         Group A
-                    </button></h2>
-                    <div className="flex flex-row justify-center">
-                        <BracketGrid
-                            groupKey="groupA"
-                            data={bracketData.groupA}
-                            updateBracket={updateBracket}
-                        />
-                    </div>
-                </div>
+                    </button>
 
-                {/* Group B Bracket */}
-                <div className="flex flex-col justify-center">
-                    <h2 className="text-xl font-semibold text-center mb-6">GROUP B</h2>
-                    <div className="flex flex-row justify-center">
-                        <BracketGrid
-                            groupKey="groupB"
-                            data={bracketData.groupB}
-                            updateBracket={updateBracket}
-                        />
-                    </div>
-                </div>
-            </div>
+                </h2>
 
-            {/* Playoff Stage and Standings Table side by side */}
-            <div className="flex flex-row justify-center items-start gap-16 mt-16">
-                <div className="flex-1">
-                    <PlayoffBracket data={bracketData.playoffs} updateBracket={updateBracket} />
-                </div>
-                <div className="flex-shrink-0">
-                    {championDetermined && <StandingsTable standings={standings} />}
-                </div>
+                <h2 className="text-xl font-semibold text-center mb-6">
+
+                    <button
+                        onClick={() => setActiveView('groupB')}
+                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Group B
+                    </button>
+
+                </h2>
+
+                <h2 className="text-xl font-semibold text-center mb-6">
+
+                    <button
+                        onClick={() => setActiveView('playoffs')}
+                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Playoffs
+                    </button>
+
+                </h2>
             </div>
         </>
     );
 
     return (
-        <div className="p-8 bg-gray-800 text-white">
-            <div className="flex justify-between items-center mb-10">
-                <h1 className="text-3xl font-bold text-center flex-1">RLCS Bracket Predictions</h1>
+        <div className="relative">
+
+
+            <div className="relative p-8 text-white">
+
                 {activeView !== 'overview' && (
                     <button
                         onClick={() => setActiveView('overview')}
@@ -747,35 +773,13 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
                         Back to Overview
                     </button>
                 )}
+
+                {activeView === 'overview' && renderOverview()}
+                {activeView === 'groupA' && renderGroupA()}
+                {activeView === 'groupB' && renderGroupB()}
+                {activeView === 'playoffs' && renderPlayoffs()}
+
             </div>
-
-            {activeView === 'overview' && renderOverview()}
-            {activeView === 'groupA' && renderGroupA()}
-            {activeView === 'groupB' && renderGroupB()}
-            {activeView === 'playoffs' && renderPlayoffs()}
-
-            {activeView === 'overview' && (
-                <div className="flex justify-center gap-4 mt-8">
-                    <button
-                        onClick={() => setActiveView('groupA')}
-                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Zoom Group A
-                    </button>
-                    <button
-                        onClick={() => setActiveView('groupB')}
-                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Zoom Group B
-                    </button>
-                    <button
-                        onClick={() => setActiveView('playoffs')}
-                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Zoom Playoffs
-                    </button>
-                </div>
-            )}
         </div>
     );
 }
