@@ -37,7 +37,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
     return (
         <div className="space-y-2">
             {/* Team 1 Row */}
-            <div className={`flex flex-row items-center space-x-2 w-[300px] transition-all duration-300 ${teamLost(team1Won) ? 'opacity-60 grayscale' : ''}`}>
+            <div className={`flex flex-row items-center space-x-2 w-[360px] transition-all duration-300 ${teamLost(team1Won) ? 'opacity-60 grayscale' : ''}`}>
                 <div className="w-16 h-16 bg-black flex items-center justify-center">
                     <img
                         src={logo1}
@@ -45,8 +45,8 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
                         className={`w-12 h-12 object-contain transition-all ${teamLost(team1Won) ? 'opacity-50 scale-90' : ''}`}
                     />
                 </div>
-                <div className={`flex items-center rounded w-40 h-16 px-2 relative transition-colors`} style={{ background: team1Bg }}>
-                    <span className={`font-bold text-white text-sm tracking-wide truncate flex items-center`}>
+                <div className={`flex items-center rounded w-60 h-16 px-2 relative transition-colors`} style={{ background: team1Bg }}>
+                    <span className={` text-white text-xl flex items-center`}>
                         {team1}
                     </span>
                     {teamLost(team1Won) && <div className="absolute inset-0 bg-opacity-30 rounded" />}
@@ -55,14 +55,14 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
                     type="number"
                     min="0"
                     max="3"
-                    className={`w-16 h-16 text-center ${getScoreBoxStyles(team1Won)}`}
+                    className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team1Won)}`}
                     value={score1}
                     onChange={(e) => onScoreChange(0, e.target.value)}
                 />
             </div>
 
             {/* Team 2 Row */}
-            <div className={`flex flex-row items-center space-x-2 w-[300px] transition-all duration-300 ${teamLost(team2Won) ? 'opacity-60 grayscale' : ''}`}>
+            <div className={`flex flex-row items-center space-x-2 w-[360px] transition-all duration-300 ${teamLost(team2Won) ? 'opacity-60 grayscale' : ''}`}>
                 <div className="w-16 h-16 bg-black flex items-center justify-center">
                     <img
                         src={logo2}
@@ -70,8 +70,8 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
                         className={`w-12 h-12 object-contain transition-all ${teamLost(team2Won) ? 'opacity-50 scale-90' : ''}`}
                     />
                 </div>
-                <div className={`flex items-center rounded w-40 h-16 px-2 relative transition-colors`} style={{ background: team2Bg }}>
-                    <span className={`font-bold text-white text-sm tracking-wide truncate flex items-center`}>
+                <div className={`flex items-center rounded w-60 h-16 px-2 relative transition-colors`} style={{ background: team2Bg }}>
+                    <span className={` text-white text-xl flex items-center`}>
                         {team2}
                     </span>
                     {teamLost(team2Won) && <div className="absolute inset-0 bg-opacity-30 rounded" />}
@@ -80,7 +80,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
                     type="number"
                     min="0"
                     max="3"
-                    className={`w-16 h-16 text-center ${getScoreBoxStyles(team2Won)}`}
+                    className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team2Won)}`}
                     value={score2}
                     onChange={(e) => onScoreChange(1, e.target.value)}
                 />

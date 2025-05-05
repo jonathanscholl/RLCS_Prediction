@@ -127,7 +127,7 @@ export default function BracketPage() {
 
         <div className="relative">
             <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-80 filter grayscale"
                 style={{ backgroundImage: 'url("background.png")' }}
             />
 
