@@ -12,11 +12,12 @@ const initialBracket = {
             ['', ''],
             ['', ''],
         ],
-        upperSemifinals: [[['Winner of UPQF1', ''], ['Winner of UPQF2', '']], [['Winner of UPQF3', ''], ['Winner of UPQF3', '']]],
+        //TODO: 2d arrays for pb pic space for all of the rounds
+        upperSemifinals: [['Winner of UPQF1', 'Winner of UPQF2'], ['Winner of UPQF3', 'Winner of UPQF3']],
         qualified: [['Winner of Semifinals 1', 'Winner of Semifinals 2']],
         lowerQuarterfinals: [['Loser of UPQF1', 'Loser of UPQF2'], ['Loser of UPQF3', 'Loser of UPQF3']],
         lowerSemifinals: [['Loser of Semifinals 1', 'Winner of LQF1'], ['Loser of Semifinals 2', 'Winner of LQF2']],
-        lowerFinal: [['', '']],
+        lowerFinal: [['Winner of LSF 1', 'Winner of LSF 2']],
     },
     groupB: {
         upperQuarterfinals: [
@@ -25,11 +26,12 @@ const initialBracket = {
             ['', ''],
             ['', ''],
         ],
-        upperSemifinals: [[['', ''], ['', '']], [['', ''], ['', '']]],
-        qualified: [['', '']],
-        lowerQuarterfinals: [['', ''], ['', '']],
-        lowerSemifinals: [['', ''], ['', '']],
-        lowerFinal: [['', '']],
+        //TODO: 2d arrays for pb pic space for all of the rounds
+        upperSemifinals: [['Winner of UPQF1', 'Winner of UPQF2'], ['Winner of UPQF3', 'Winner of UPQF3']],
+        qualified: [['Winner of Semifinals 1', 'Winner of Semifinals 2']],
+        lowerQuarterfinals: [['Loser of UPQF1', 'Loser of UPQF2'], ['Loser of UPQF3', 'Loser of UPQF3']],
+        lowerSemifinals: [['Loser of Semifinals 1', 'Winner of LQF1'], ['Loser of Semifinals 2', 'Winner of LQF2']],
+        lowerFinal: [['Winner of LSF 1', 'Winner of LSF 2']],
     },
     playoffs: {
         lowerRound1: [['', ''], ['', '']],

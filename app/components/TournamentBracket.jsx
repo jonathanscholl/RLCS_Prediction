@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import StandingsTable from './StandingsTable';
 import Image from "next/image";
-import nrg_logo from "@/public/nrg_logo.png"
+
 
 /**
  * Represents a single match in the tournament bracket
@@ -162,33 +162,34 @@ function updatePlayoffBrackets(data, updateBracket) {
  * @param {string} loser - Losing team
  * @param {Function} updateBracket - Function to update bracket data
  */
-function advanceTeam(data, groupKey, round, index, winner, loser, updateBracket) {
-    const advance = (targetRound, matchIndex, team, position) => {
+function advanceTeam(data, groupKey, round, index, winner, loser, winnerLogo, loserLogo, updateBracket) {
+    const advance = (targetRound, matchIndex, team, teamLogo, position) => {
         const newRound = [...(data[targetRound] || [])];
-        newRound[matchIndex] = newRound[matchIndex] || ['', ''];
+        newRound[matchIndex] = newRound[matchIndex] || ['', '', '', '', '', ''];
         newRound[matchIndex][position] = team;
+        newRound[matchIndex][position + 2] = teamLogo;
         updateBracket(groupKey, targetRound, newRound);
     };
 
     // Handle team advancement based on the current round
     switch (round) {
         case 'upperQuarterfinals':
-            advance('upperSemifinals', Math.floor(index / 2), winner, index % 2);
-            advance('lowerQuarterfinals', Math.floor(index / 2), loser, index % 2);
+            advance('upperSemifinals', Math.floor(index / 2), winner, winnerLogo, index % 2);
+            advance('lowerQuarterfinals', Math.floor(index / 2), loser, loserLogo, index % 2);
             break;
         case 'upperSemifinals':
-            advance('qualified', 0, winner, index % 2);
-            advance('lowerSemifinals', index === 0 ? 1 : 0, loser, 0);
+            advance('qualified', 0, winner, winnerLogo, index % 2);
+            advance('lowerSemifinals', index === 0 ? 1 : 0, loser, loserLogo, 0);
             break;
         case 'qualified':
             // When a team qualifies, check and update playoff brackets
             updatePlayoffBrackets(data, updateBracket);
             break;
         case 'lowerQuarterfinals':
-            advance('lowerSemifinals', index, winner, 1);
+            advance('lowerSemifinals', index, winner, winnerLogo, 1);
             break;
         case 'lowerSemifinals':
-            advance('lowerFinal', 0, winner, index);
+            advance('lowerFinal', 0, winner, winnerLogo, index);
             break;
         case 'lowerFinal':
             // When a team wins the lower final, check and update playoff brackets
@@ -212,8 +213,6 @@ function BracketGrid({ groupKey, data, updateBracket }) {
 
         const [team1, team2, logo1, logo2, score1, score2] = newMatch;
 
-        console.log(newMatch, "blub")
-        console.log(logo1)
         const s1 = parseInt(score1);
         const s2 = parseInt(score2);
 
@@ -222,7 +221,19 @@ function BracketGrid({ groupKey, data, updateBracket }) {
         if ((s1 === 3 || s2 === 3) && (s1 <= 3 && s2 <= 3)) {
             const winner = s1 === 3 ? team1 : team2;
             const loser = s1 === 3 ? team2 : team1;
-            advanceTeam(data, groupKey, round, index, winner, loser, updateBracket);
+            const winnerLogo = s1 === 3 ? logo1 : logo2;
+            const loserLogo = s1 === 3 ? logo2 : logo1;
+            advanceTeam(
+                data,
+                groupKey,
+                round,
+                index,
+                winner,
+                loser,
+                winnerLogo,
+                loserLogo,
+                updateBracket
+            );
 
             // Force update playoff brackets after any match completion
             setTimeout(() => {
@@ -303,7 +314,7 @@ function PlayoffMatch({ team1, team2, score1 = '', score2 = '', onScoreChange })
     const team1Won = team1Score === 4;
     const team2Won = team2Score === 4;
     const matchComplete = (team1Won || team2Won) && (team1Score <= 4 && team2Score <= 4);
-    const placeholderLogo = '/placeholder-logo.png';
+    const placeholderLogo = 'https://kclzskvpikbsdoufynvo.supabase.co/storage/v1/object/public/logos//Placeholder.png';
     const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-9 h-9 text-black bg-white";
     const getScoreBoxStyles = (isWinner) => {
         return `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
@@ -314,7 +325,7 @@ function PlayoffMatch({ team1, team2, score1 = '', score2 = '', onScoreChange })
         <div className="space-y-2">
 
             <div className="flex items-center rounded overflow-hidden" style={{ background: team1Bg }}>
-                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <Image src={placeholderLogo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
                 <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
                 <input
                     type="number"
@@ -326,7 +337,7 @@ function PlayoffMatch({ team1, team2, score1 = '', score2 = '', onScoreChange })
                 />
             </div>
             <div className="flex items-center rounded overflow-hidden" style={{ background: team2Bg }}>
-                <Image src={nrg_logo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
+                <Image src={placeholderLogo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
                 <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team2}</span>
                 <input
                     type="number"
