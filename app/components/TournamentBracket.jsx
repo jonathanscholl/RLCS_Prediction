@@ -152,58 +152,19 @@ function BracketRound({ title, matches, onMatchUpdate }) {
 }
 
 /**
- * Updates playoff brackets when group stage matches are completed
- * @param {Object} data - Current bracket data
- * @param {Function} updateBracket - Function to update bracket data
- */
-function updatePlayoffBrackets(data, updateBracket) {
-    console.log('Updating playoff brackets with data:', data);
-
-    // Check if both groups have their qualified teams
-    const groupAQualified = data.groupA?.qualified?.[0] || [];
-    const groupBQualified = data.groupB?.qualified?.[0] || [];
-
-    console.log('Group A Qualified:', groupAQualified);
-    console.log('Group B Qualified:', groupBQualified);
-
-    // Only proceed if both groups have their qualified teams
-    if (groupAQualified[0] && groupAQualified[1] && groupBQualified[0] && groupBQualified[1]) {
-        console.log('Updating upper quarterfinals');
-        // Update upper quarterfinals
-        updateBracket('playoffs', 'upperQuarterfinals', [
-            [groupAQualified[0], groupBQualified[1]], // Group A Seed 1 vs Group B Seed 2
-            [groupAQualified[1], groupBQualified[0]]  // Group A Seed 2 vs Group B Seed 1
-        ]);
-    }
-
-    // Check if both groups have their lower final winners
-    const groupALowerFinal = data.groupA?.lowerFinal?.[0] || [];
-    const groupBLowerFinal = data.groupB?.lowerFinal?.[0] || [];
-
-    console.log('Group A Lower Final:', groupALowerFinal);
-    console.log('Group B Lower Final:', groupBLowerFinal);
-
-    // Update lower round 1 if both groups have lower final results
-    if (groupALowerFinal[0] && groupALowerFinal[1] && groupBLowerFinal[0] && groupBLowerFinal[1]) {
-        // Pair: Group A lower final winner vs Group B lower final loser, and vice versa
-        updateBracket('playoffs', 'lowerRound1', [
-            [groupALowerFinal[0], groupBLowerFinal[1]],
-            [groupBLowerFinal[0], groupALowerFinal[1]]
-        ]);
-    }
-}
-
-/**
  * Handles the logic for advancing teams through the bracket
  * @param {Object} data - Current bracket data
- * @param {string} groupKey - Group identifier (A or B)
+ * @param {string} groupKey - Group identifier (A, B, or playoffs)
  * @param {string} round - Current round
  * @param {number} index - Match index
  * @param {string} winner - Winning team
  * @param {string} loser - Losing team
+ * @param {string} winnerLogo - Winning team's logo
+ * @param {string} loserLogo - Losing team's logo
  * @param {Function} updateBracket - Function to update bracket data
+ * @param {boolean} isPlayoff - Whether this is a playoff match
  */
-function advanceTeam(data, groupKey, round, index, winner, loser, winnerLogo, loserLogo, updateBracket) {
+function advanceTeam(data, groupKey, round, index, winner, loser, winnerLogo, loserLogo, updateBracket, isPlayoff = false) {
     const advance = (targetRound, matchIndex, team, teamLogo, position) => {
         const newRound = [...(data[targetRound] || [])];
         newRound[matchIndex] = newRound[matchIndex] || ['', '', '', '', '', ''];
@@ -212,30 +173,76 @@ function advanceTeam(data, groupKey, round, index, winner, loser, winnerLogo, lo
         updateBracket(groupKey, targetRound, newRound);
     };
 
-    // Handle team advancement based on the current round
-    switch (round) {
-        case 'upperQuarterfinals':
-            advance('upperSemifinals', Math.floor(index / 2), winner, winnerLogo, index % 2);
-            advance('lowerQuarterfinals', Math.floor(index / 2), loser, loserLogo, index % 2);
-            break;
-        case 'upperSemifinals':
-            advance('qualified', 0, winner, winnerLogo, index % 2);
-            advance('lowerSemifinals', index === 0 ? 1 : 0, loser, loserLogo, 0);
-            break;
-        case 'qualified':
-            // When a team qualifies, check and update playoff brackets
-            updatePlayoffBrackets(data, updateBracket);
-            break;
-        case 'lowerQuarterfinals':
-            advance('lowerSemifinals', index, winner, winnerLogo, 1);
-            break;
-        case 'lowerSemifinals':
-            advance('lowerFinal', 0, winner, winnerLogo, index);
-            break;
-        case 'lowerFinal':
-            // When a team wins the lower final, check and update playoff brackets
-            updatePlayoffBrackets(data, updateBracket);
-            break;
+    if (isPlayoff) {
+        // Handle playoff advancement
+        switch (round) {
+            case 'lowerRound1':
+                // Lower round 1 winners go to lower quarterfinals
+                // First winner goes to first match, second winner goes to second match
+                advance('lowerQuarterfinals', index, winner, winnerLogo, 0);
+                break;
+            case 'upperQuarterfinals':
+                // Upper quarterfinals winners go to semifinals
+                // First winner goes to first semifinal, second winner goes to second semifinal
+                advance('semifinals', index, winner, winnerLogo, 0);
+                // Upper quarterfinals losers go to lower quarterfinals
+                // First loser goes to second match, second loser goes to first match
+                advance('lowerQuarterfinals', index === 0 ? 1 : 0, loser, loserLogo, 1);
+                break;
+            case 'lowerQuarterfinals':
+                // Lower quarterfinals winners go to semifinals
+                // First winner goes to first semifinal, second winner goes to second semifinal
+                advance('semifinals', index, winner, winnerLogo, 1);
+                break;
+            case 'semifinals':
+                advance('grandFinal', 0, winner, winnerLogo, index);
+                break;
+            case 'grandFinal':
+                if (winner) {
+                    updateBracket('playoffs', 'champion', [[winner]]);
+                }
+                break;
+        }
+    } else {
+        // Handle group stage advancement
+        switch (round) {
+            case 'upperQuarterfinals':
+                advance('upperSemifinals', Math.floor(index / 2), winner, winnerLogo, index % 2);
+                advance('lowerQuarterfinals', Math.floor(index / 2), loser, loserLogo, index % 2);
+                break;
+            case 'upperSemifinals':
+                advance('qualified', 0, winner, winnerLogo, index % 2);
+                advance('lowerSemifinals', index === 0 ? 1 : 0, loser, loserLogo, 0);
+                break;
+            case 'qualified':
+                // When a team qualifies, update playoff brackets
+                const groupAQualified = data.groupA?.qualified?.[0] || [];
+                const groupBQualified = data.groupB?.qualified?.[0] || [];
+                if (groupAQualified[0] && groupAQualified[1] && groupBQualified[0] && groupBQualified[1]) {
+                    updateBracket('playoffs', 'upperQuarterfinals', [
+                        [groupAQualified[0], groupBQualified[1], groupAQualified[2], groupBQualified[3], '', ''],
+                        [groupAQualified[1], groupBQualified[0], groupAQualified[3], groupBQualified[2], '', '']
+                    ]);
+                }
+                break;
+            case 'lowerQuarterfinals':
+                advance('lowerSemifinals', index, winner, winnerLogo, 1);
+                break;
+            case 'lowerSemifinals':
+                advance('lowerFinal', 0, winner, winnerLogo, index);
+                break;
+            case 'lowerFinal':
+                // When a team wins the lower final, update playoff brackets
+                const groupALowerFinal = data.groupA?.lowerFinal?.[0] || [];
+                const groupBLowerFinal = data.groupB?.lowerFinal?.[0] || [];
+                if (groupALowerFinal[0] && groupALowerFinal[1] && groupBLowerFinal[0] && groupBLowerFinal[1]) {
+                    updateBracket('playoffs', 'lowerRound1', [
+                        [groupALowerFinal[0], groupBLowerFinal[1], groupALowerFinal[2], groupBLowerFinal[3], '', ''],
+                        [groupBLowerFinal[0], groupALowerFinal[1], groupBLowerFinal[2], groupALowerFinal[3], '', '']
+                    ]);
+                }
+                break;
+        }
     }
 }
 
@@ -253,10 +260,8 @@ function BracketGrid({ groupKey, data, updateBracket }) {
         updateBracket(groupKey, round, updated);
 
         const [team1, team2, logo1, logo2, score1, score2] = newMatch;
-
         const s1 = parseInt(score1);
         const s2 = parseInt(score2);
-
 
         // Check if match is complete (best of 5)
         if ((s1 === 3 || s2 === 3) && (s1 <= 3 && s2 <= 3)) {
@@ -273,19 +278,9 @@ function BracketGrid({ groupKey, data, updateBracket }) {
                 loser,
                 winnerLogo,
                 loserLogo,
-                updateBracket
+                updateBracket,
+                false
             );
-
-            // Force update playoff brackets after any match completion
-            setTimeout(() => {
-                // Get the complete bracket data by looking at the parent component's props
-                const completeData = {
-                    groupA: groupKey === 'groupA' ? data : window.bracketData?.groupA,
-                    groupB: groupKey === 'groupB' ? data : window.bracketData?.groupB,
-                    playoffs: window.bracketData?.playoffs
-                };
-                updatePlayoffBrackets(completeData, updateBracket);
-            }, 0);
         }
     };
 
@@ -374,31 +369,6 @@ function PlayoffRound({ title, matches, onMatchUpdate }) {
     );
 }
 
-// Helper to check if a playoff match is complete (BO7)
-function isPlayoffMatchComplete(score1, score2) {
-    const s1 = parseInt(score1);
-    const s2 = parseInt(score2);
-    return ((s1 === 4 || s2 === 4) && (s1 <= 4 && s2 <= 4));
-}
-
-// Helper to get winner
-function getWinner(team1, team2, score1, score2) {
-    const s1 = parseInt(score1);
-    const s2 = parseInt(score2);
-    if (s1 === 4) return team1;
-    if (s2 === 4) return team2;
-    return '';
-}
-
-// Helper to get loser
-function getLoser(team1, team2, score1, score2) {
-    const s1 = parseInt(score1);
-    const s2 = parseInt(score2);
-    if (s1 === 4) return team2;
-    if (s2 === 4) return team1;
-    return '';
-}
-
 function BracketColumn({ label, matches, onMatchUpdate }) {
     return (
         <div className="flex flex-col items-center min-w-[200px]">
@@ -429,72 +399,73 @@ function BracketColumn({ label, matches, onMatchUpdate }) {
 }
 
 function PlayoffBracket({ data, updateBracket }) {
-    // Auto-advance logic for the described playoff structure
+    // Add back the useEffect to handle initial playoff bracket population
     React.useEffect(() => {
-        // LOWER QUARTERFINALS: Winners from Lower Round 1 + Losers from Upper Quarterfinals
-        const lowerR1 = data.lowerRound1;
-        const upperQF = data.upperQuarterfinals;
-        const lowerQF = data.lowerQuarterfinals;
+        // Get the complete bracket data
+        const completeData = {
+            groupA: window.bracketData?.groupA,
+            groupB: window.bracketData?.groupB,
+            playoffs: data
+        };
 
-        // Lower Round 1 winners
-        const lr1w1 = lowerR1 && lowerR1[0] && isPlayoffMatchComplete(lowerR1[0][4], lowerR1[0][5]) ? getWinner(lowerR1[0][0], lowerR1[0][1], lowerR1[0][4], lowerR1[0][5]) : '';
-        const lr1w2 = lowerR1 && lowerR1[1] && isPlayoffMatchComplete(lowerR1[1][4], lowerR1[1][5]) ? getWinner(lowerR1[1][0], lowerR1[1][1], lowerR1[1][4], lowerR1[1][5]) : '';
+        // Check if we have qualified teams
+        const groupAQualified = completeData.groupA?.qualified?.[0] || [];
+        const groupBQualified = completeData.groupB?.qualified?.[0] || [];
+        const hasQualifiedTeams = groupAQualified[0] && groupAQualified[1] && groupBQualified[0] && groupBQualified[1];
 
-        // Upper QF losers
-        const uqfl1 = upperQF && upperQF[0] && isPlayoffMatchComplete(upperQF[0][4], upperQF[0][5]) ? getLoser(upperQF[0][0], upperQF[0][1], upperQF[0][4], upperQF[0][5]) : '';
-        const uqfl2 = upperQF && upperQF[1] && isPlayoffMatchComplete(upperQF[1][4], upperQF[1][5]) ? getLoser(upperQF[1][0], upperQF[1][1], upperQF[1][4], upperQF[1][5]) : '';
+        // Check if we have lower final teams
+        const groupALowerFinal = completeData.groupA?.lowerFinal?.[0] || [];
+        const groupBLowerFinal = completeData.groupB?.lowerFinal?.[0] || [];
+        const hasLowerFinalTeams = groupALowerFinal[0] && groupALowerFinal[1] && groupBLowerFinal[0] && groupBLowerFinal[1];
 
-        // Fill Lower Quarterfinals when ready
-        if (lr1w1 && uqfl1 && (lowerQF[0][0] !== lr1w1 || lowerQF[0][1] !== uqfl1)) {
-            updateBracket('playoffs', 'lowerQuarterfinals', [
-                [lr1w1, uqfl1, lowerR1[0][2], upperQF[0][3], '', ''],
-                lowerQF[1]
-            ]);
-        }
-        if (lr1w2 && uqfl2 && (lowerQF[1][0] !== lr1w2 || lowerQF[1][1] !== uqfl2)) {
-            updateBracket('playoffs', 'lowerQuarterfinals', [
-                lowerQF[0],
-                [lr1w2, uqfl2, lowerR1[1][2], upperQF[1][3], '', '']
-            ]);
-        }
-
-        // SEMIFINALS (Top 4): Upper QF winners + Lower QF winners
-        const uqfw1 = upperQF && upperQF[0] && isPlayoffMatchComplete(upperQF[0][4], upperQF[0][5]) ? getWinner(upperQF[0][0], upperQF[0][1], upperQF[0][4], upperQF[0][5]) : '';
-        const uqfw2 = upperQF && upperQF[1] && isPlayoffMatchComplete(upperQF[1][4], upperQF[1][5]) ? getWinner(upperQF[1][0], upperQF[1][1], upperQF[1][4], upperQF[1][5]) : '';
-        const lqfw1 = lowerQF && lowerQF[0] && isPlayoffMatchComplete(lowerQF[0][4], lowerQF[0][5]) ? getWinner(lowerQF[0][0], lowerQF[0][1], lowerQF[0][4], lowerQF[0][5]) : '';
-        const lqfw2 = lowerQF && lowerQF[1] && isPlayoffMatchComplete(lowerQF[1][4], lowerQF[1][5]) ? getWinner(lowerQF[1][0], lowerQF[1][1], lowerQF[1][4], lowerQF[1][5]) : '';
-
-        const semifinals = data.semifinals;
-        if (uqfw1 && lqfw1 && (semifinals[0][0] !== uqfw1 || semifinals[0][1] !== lqfw1)) {
-            updateBracket('playoffs', 'semifinals', [
-                [uqfw1, lqfw1, upperQF[0][2], lowerQF[0][2], '', ''],
-                semifinals[1]
-            ]);
-        }
-        if (uqfw2 && lqfw2 && (semifinals[1][0] !== uqfw2 || semifinals[1][1] !== lqfw2)) {
-            updateBracket('playoffs', 'semifinals', [
-                semifinals[0],
-                [uqfw2, lqfw2, upperQF[1][2], lowerQF[1][2], '', '']
+        // Update upper quarterfinals if we have qualified teams
+        if (hasQualifiedTeams) {
+            console.log('Updating upper quarterfinals with qualified teams');
+            updateBracket('playoffs', 'upperQuarterfinals', [
+                [groupAQualified[0], groupBQualified[1], groupAQualified[2], groupBQualified[3], '', ''], // Group A Seed 1 vs Group B Seed 2
+                [groupAQualified[1], groupBQualified[0], groupAQualified[3], groupBQualified[2], '', '']  // Group A Seed 2 vs Group B Seed 1
             ]);
         }
 
-        // GRAND FINAL
-        const sf = data.semifinals;
-        const sfw1 = sf && sf[0] && isPlayoffMatchComplete(sf[0][4], sf[0][5]) ? getWinner(sf[0][0], sf[0][1], sf[0][4], sf[0][5]) : '';
-        const sfw2 = sf && sf[1] && isPlayoffMatchComplete(sf[1][4], sf[1][5]) ? getWinner(sf[1][0], sf[1][1], sf[1][4], sf[1][5]) : '';
-        const gf = data.grandFinal;
-        if (sfw1 && sfw2 && (gf[0][0] !== sfw1 || gf[0][1] !== sfw2)) {
-            updateBracket('playoffs', 'grandFinal', [[sfw1, sfw2, sf[0][2], sf[1][2], '', '']]);
+        // Update lower round 1 if we have lower final teams
+        if (hasLowerFinalTeams) {
+            console.log('Updating lower round 1 with lower final teams');
+            updateBracket('playoffs', 'lowerRound1', [
+                [groupALowerFinal[0], groupBLowerFinal[1], groupALowerFinal[2], groupBLowerFinal[3], '', ''],
+                [groupBLowerFinal[0], groupALowerFinal[1], groupBLowerFinal[2], groupALowerFinal[3], '', '']
+            ]);
         }
+    }, [data.groupA?.qualified, data.groupB?.qualified, data.groupA?.lowerFinal, data.groupB?.lowerFinal]);
 
-        // CHAMPION
-        if (gf && gf[0]) {
-            const champ = isPlayoffMatchComplete(gf[0][4], gf[0][5]) ? getWinner(gf[0][0], gf[0][1], gf[0][4], gf[0][5]) : '';
-            if (champ && (!data.champion || !data.champion[0] || data.champion[0][0] !== champ)) {
-                updateBracket('playoffs', 'champion', [[champ]]);
-            }
+    const handleMatchUpdate = (round, index, newMatch) => {
+        const updated = [...data[round]];
+        updated[index] = newMatch;
+        updateBracket('playoffs', round, updated);
+
+        const [team1, team2, logo1, logo2, score1, score2] = newMatch;
+        const s1 = parseInt(score1);
+        const s2 = parseInt(score2);
+
+        // Check if match is complete (best of 7)
+        if ((s1 === 4 || s2 === 4) && (s1 <= 4 && s2 <= 4)) {
+            const winner = s1 === 4 ? team1 : team2;
+            const loser = s1 === 4 ? team2 : team1;
+            const winnerLogo = s1 === 4 ? logo1 : logo2;
+            const loserLogo = s1 === 4 ? logo2 : logo1;
+            advanceTeam(
+                data,
+                'playoffs',
+                round,
+                index,
+                winner,
+                loser,
+                winnerLogo,
+                loserLogo,
+                updateBracket,
+                true
+            );
         }
-    }, [data, updateBracket]);
+    };
 
     return (
         <div className="flex flex-row w-full justify-center items-center gap-12">
@@ -502,19 +473,19 @@ function PlayoffBracket({ data, updateBracket }) {
             <BracketColumn
                 label="LOWER ROUND 1 (BO7)"
                 matches={data.lowerRound1}
-                onMatchUpdate={(i, match) => updateBracket('playoffs', 'lowerRound1', data.lowerRound1.map((m, idx) => idx === i ? match : m))}
+                onMatchUpdate={(i, match) => handleMatchUpdate('lowerRound1', i, match)}
             />
             {/* Quarterfinals: upper on top, lower below */}
             <div className="flex flex-col justify-center items-center gap-16">
                 <BracketColumn
                     label="UPPER QUARTERFINALS (BO7)"
                     matches={data.upperQuarterfinals}
-                    onMatchUpdate={(i, match) => updateBracket('playoffs', 'upperQuarterfinals', data.upperQuarterfinals.map((m, idx) => idx === i ? match : m))}
+                    onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', i, match)}
                 />
                 <BracketColumn
                     label="LOWER QUARTERFINALS (BO7)"
                     matches={data.lowerQuarterfinals}
-                    onMatchUpdate={(i, match) => updateBracket('playoffs', 'lowerQuarterfinals', data.lowerQuarterfinals.map((m, idx) => idx === i ? match : m))}
+                    onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
                 />
             </div>
             {/* Semifinals, Grand Final, Champion - each in their own column */}
@@ -522,12 +493,12 @@ function PlayoffBracket({ data, updateBracket }) {
                 <BracketColumn
                     label="SEMIFINALS (TOP 4, BO7)"
                     matches={data.semifinals}
-                    onMatchUpdate={(i, match) => updateBracket('playoffs', 'semifinals', data.semifinals.map((m, idx) => idx === i ? match : m))}
+                    onMatchUpdate={(i, match) => handleMatchUpdate('semifinals', i, match)}
                 />
                 <BracketColumn
                     label="GRAND FINAL (BO7)"
                     matches={data.grandFinal}
-                    onMatchUpdate={(i, match) => updateBracket('playoffs', 'grandFinal', data.grandFinal.map((m, idx) => idx === i ? match : m))}
+                    onMatchUpdate={(i, match) => handleMatchUpdate('grandFinal', i, match)}
                 />
                 <div className="flex flex-col items-center justify-center min-w-[200px]">
                     {data.champion && data.champion[0] && data.champion[0][0] && (
