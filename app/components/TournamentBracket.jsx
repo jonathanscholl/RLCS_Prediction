@@ -5,32 +5,27 @@ import Image from "next/image";
 
 
 /**
- * Represents a single match in the tournament bracket
+ * Unified match display component that handles both BO5 and BO7 formats
  * @param {Object} props
  * @param {string} props.team1 - First team name
  * @param {string} props.team2 - Second team name
  * @param {string} props.team1Logo - First team's logo
- * @param {string} props.team2Logo
+ * @param {string} props.team2Logo - Second team's logo
  * @param {string} props.score1 - First team's score
  * @param {string} props.score2 - Second team's score
  * @param {Function} props.onScoreChange - Callback when score changes
+ * @param {number} props.maxScore - Maximum score to win (3 for BO5, 4 for BO7)
  */
-function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange }) {
+function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, maxScore = 3 }) {
     const team1Score = parseInt(score1);
     const team2Score = parseInt(score2);
-    const team1Won = team1Score === 3;
-    const team2Won = team2Score === 3;
-
+    const team1Won = team1Score === maxScore;
+    const team2Won = team2Score === maxScore;
+    const matchComplete = (team1Won || team2Won) && (team1Score <= maxScore && team2Score <= maxScore);
     const placeholderLogo = 'https://kclzskvpikbsdoufynvo.supabase.co/storage/v1/object/public/logos/Placeholder.png';
-
-    const logo1 = team1Logo || placeholderLogo;
-    const logo2 = team2Logo || placeholderLogo;
-    const matchComplete = (team1Won || team2Won) && (team1Score <= 3 && team2Score <= 3);
-
     const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-15 h-15 text-black bg-white";
     const getScoreBoxStyles = (isWinner) => `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
     const teamLost = (won) => matchComplete && !won;
-
     const team1Bg = '#2b95c6';
     const team2Bg = '#d4500b';
 
@@ -40,7 +35,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
             <div className={`flex flex-row items-center space-x-2 w-[360px] transition-all duration-300 ${teamLost(team1Won) ? 'opacity-60 grayscale' : ''}`}>
                 <div className="w-16 h-16 bg-black flex items-center justify-center">
                     <img
-                        src={logo1}
+                        src={team1Logo || placeholderLogo}
                         alt="Team 1 logo"
                         className={`w-12 h-12 object-contain transition-all ${teamLost(team1Won) ? 'opacity-50 scale-90' : ''}`}
                     />
@@ -54,7 +49,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
                 <input
                     type="number"
                     min="0"
-                    max="3"
+                    max={maxScore}
                     className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team1Won)}`}
                     value={score1}
                     onChange={(e) => onScoreChange(0, e.target.value)}
@@ -65,7 +60,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
             <div className={`flex flex-row items-center space-x-2 w-[360px] transition-all duration-300 ${teamLost(team2Won) ? 'opacity-60 grayscale' : ''}`}>
                 <div className="w-16 h-16 bg-black flex items-center justify-center">
                     <img
-                        src={logo2}
+                        src={team2Logo || placeholderLogo}
                         alt="Team 2 logo"
                         className={`w-12 h-12 object-contain transition-all ${teamLost(team2Won) ? 'opacity-50 scale-90' : ''}`}
                     />
@@ -79,7 +74,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
                 <input
                     type="number"
                     min="0"
-                    max="3"
+                    max={maxScore}
                     className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team2Won)}`}
                     value={score2}
                     onChange={(e) => onScoreChange(1, e.target.value)}
@@ -87,15 +82,41 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
             </div>
 
             {/* Validation Message */}
-            {(team1Score + team2Score > 5) && (
+            {(team1Score + team2Score > maxScore * 2 - 1) && (
                 <div className="text-red-500 text-sm mt-1">
-                    Invalid score: Games are best of 5 (maximum 5 games total)
+                    Invalid score: Games are best of {maxScore * 2 - 1} (maximum {maxScore * 2 - 1} games total)
                 </div>
             )}
         </div>
     );
 }
 
+/**
+ * Represents a match in the tournament bracket (both group stage and playoffs)
+ * @param {Object} props
+ * @param {string} props.team1 - First team name
+ * @param {string} props.team2 - Second team name
+ * @param {string} props.team1Logo - First team's logo
+ * @param {string} props.team2Logo - Second team's logo
+ * @param {string} props.score1 - First team's score
+ * @param {string} props.score2 - Second team's score
+ * @param {Function} props.onScoreChange - Callback when score changes
+ * @param {boolean} props.isPlayoff - Whether this is a playoff match (BO7) or group stage match (BO5)
+ */
+function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, isPlayoff = false }) {
+    return (
+        <MatchDisplay
+            team1={team1}
+            team2={team2}
+            team1Logo={team1Logo}
+            team2Logo={team2Logo}
+            score1={score1}
+            score2={score2}
+            onScoreChange={onScoreChange}
+            maxScore={isPlayoff ? 4 : 3}
+        />
+    );
+}
 
 /**
  * Represents a round in the tournament bracket (e.g., Quarterfinals, Semifinals)
@@ -122,7 +143,6 @@ function BracketRound({ title, matches, onMatchUpdate }) {
                     onScoreChange={(teamIndex, newScore) => {
                         const newMatch = [...match];
                         newMatch[teamIndex + 4] = newScore;
-
                         onMatchUpdate(index, newMatch);
                     }}
                 />
@@ -321,64 +341,6 @@ function BracketGrid({ groupKey, data, updateBracket }) {
 }
 
 /**
- * Represents a playoff match with best of 7 format
- * @param {Object} props
- * @param {string} props.team1 - First team name
- * @param {string} props.team2 - Second team name
- * @param {string} props.score1 - First team's score
- * @param {string} props.score2 - Second team's score
- * @param {Function} props.onScoreChange - Callback when score changes
- */
-function PlayoffMatch({ team1, team2, score1 = '', score2 = '', onScoreChange }) {
-    const team1Score = parseInt(score1);
-    const team2Score = parseInt(score2);
-    const team1Won = team1Score === 4;
-    const team2Won = team2Score === 4;
-    const matchComplete = (team1Won || team2Won) && (team1Score <= 4 && team2Score <= 4);
-    const placeholderLogo = 'https://kclzskvpikbsdoufynvo.supabase.co/storage/v1/object/public/logos//Placeholder.png';
-    const baseInputStyles = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-2 border-white text-center w-9 h-9 text-black bg-white";
-    const getScoreBoxStyles = (isWinner) => {
-        return `${baseInputStyles} ${isWinner ? 'bg-success' : 'bg-gray-600'}`;
-    };
-    const team1Bg = '#2b95c6';
-    const team2Bg = '#d4500b';
-    return (
-        <div className="space-y-2">
-
-            <div className="flex items-center rounded overflow-hidden" style={{ background: team1Bg }}>
-                <Image src={placeholderLogo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
-                <span className="font-extrabold text-white text-left flex-1 pl-2 text-base tracking-wide">{team1}</span>
-                <input
-                    type="number"
-                    min="0"
-                    max="4"
-                    className={getScoreBoxStyles(team1Won) + ' ml-2'}
-                    value={score1}
-                    onChange={(e) => onScoreChange(0, e.target.value)}
-                />
-            </div>
-            <div className="flex items-center rounded overflow-hidden" style={{ background: team2Bg }}>
-                <Image src={placeholderLogo} alt="logo" width={32} height={32} className="w-8 h-8 object-contain bg-white rounded-full m-2" />
-                <span className="font-bold text-white text-left flex-1 pl-2 text-base tracking-wide">{team2}</span>
-                <input
-                    type="number"
-                    min="0"
-                    max="4"
-                    className={getScoreBoxStyles(team2Won) + ' ml-2'}
-                    value={score2}
-                    onChange={(e) => onScoreChange(1, e.target.value)}
-                />
-            </div>
-            {((team1Score || 0) + (team2Score || 0) > 7) && (
-                <div className="text-red-500 text-sm mt-1">
-                    Invalid score: Games are best of 7 (maximum 7 games total)
-                </div>
-            )}
-        </div>
-    );
-}
-
-/**
  * Represents a playoff round in the tournament bracket
  * @param {Object} props
  * @param {string} props.title - Round title
@@ -392,19 +354,20 @@ function PlayoffRound({ title, matches, onMatchUpdate }) {
                 <h3 className="text-sm font-semibold mb-0">{title}</h3>
             </div>
             {matches.map((match, index) => (
-                <PlayoffMatch
+                <Match
                     key={index}
                     team1={match[0]}
                     team2={match[1]}
-                    team1Logo={match[3]}
-                    team2Logo={match[4]}
+                    team1Logo={match[2]}
+                    team2Logo={match[3]}
                     score1={match[4]}
                     score2={match[5]}
                     onScoreChange={(teamIndex, newScore) => {
                         const newMatch = [...match];
-                        newMatch[teamIndex + 2] = newScore;
+                        newMatch[teamIndex + 4] = newScore;
                         onMatchUpdate(index, newMatch);
                     }}
+                    isPlayoff={true}
                 />
             ))}
         </div>
@@ -436,6 +399,35 @@ function getLoser(team1, team2, score1, score2) {
     return '';
 }
 
+function BracketColumn({ label, matches, onMatchUpdate }) {
+    return (
+        <div className="flex flex-col items-center min-w-[200px]">
+            <div className="bg-gray-900 text-white font-bold px-4 py-2 mb-2 rounded text-center w-full text-xs uppercase tracking-wider">
+                {label}
+            </div>
+            <div className="flex flex-col gap-6 w-full">
+                {matches.map((match, idx) => (
+                    <Match
+                        key={idx}
+                        team1={match[0]}
+                        team2={match[1]}
+                        team1Logo={match[2]}
+                        team2Logo={match[3]}
+                        score1={match[4]}
+                        score2={match[5]}
+                        onScoreChange={(teamIndex, newScore) => {
+                            const newMatch = [...match];
+                            newMatch[teamIndex + 4] = newScore;
+                            onMatchUpdate(idx, newMatch);
+                        }}
+                        isPlayoff={true}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function PlayoffBracket({ data, updateBracket }) {
     // Auto-advance logic for the described playoff structure
     React.useEffect(() => {
@@ -445,92 +437,64 @@ function PlayoffBracket({ data, updateBracket }) {
         const lowerQF = data.lowerQuarterfinals;
 
         // Lower Round 1 winners
-        const lr1w1 = lowerR1 && lowerR1[0] && isPlayoffMatchComplete(lowerR1[0][2], lowerR1[0][3]) ? getWinner(lowerR1[0][0], lowerR1[0][1], lowerR1[0][2], lowerR1[0][3]) : '';
-        const lr1w2 = lowerR1 && lowerR1[1] && isPlayoffMatchComplete(lowerR1[1][2], lowerR1[1][3]) ? getWinner(lowerR1[1][0], lowerR1[1][1], lowerR1[1][2], lowerR1[1][3]) : '';
+        const lr1w1 = lowerR1 && lowerR1[0] && isPlayoffMatchComplete(lowerR1[0][4], lowerR1[0][5]) ? getWinner(lowerR1[0][0], lowerR1[0][1], lowerR1[0][4], lowerR1[0][5]) : '';
+        const lr1w2 = lowerR1 && lowerR1[1] && isPlayoffMatchComplete(lowerR1[1][4], lowerR1[1][5]) ? getWinner(lowerR1[1][0], lowerR1[1][1], lowerR1[1][4], lowerR1[1][5]) : '';
 
         // Upper QF losers
-        const uqfl1 = upperQF && upperQF[0] && isPlayoffMatchComplete(upperQF[0][2], upperQF[0][3]) ? getLoser(upperQF[0][0], upperQF[0][1], upperQF[0][2], upperQF[0][3]) : '';
-        const uqfl2 = upperQF && upperQF[1] && isPlayoffMatchComplete(upperQF[1][2], upperQF[1][3]) ? getLoser(upperQF[1][0], upperQF[1][1], upperQF[1][2], upperQF[1][3]) : '';
+        const uqfl1 = upperQF && upperQF[0] && isPlayoffMatchComplete(upperQF[0][4], upperQF[0][5]) ? getLoser(upperQF[0][0], upperQF[0][1], upperQF[0][4], upperQF[0][5]) : '';
+        const uqfl2 = upperQF && upperQF[1] && isPlayoffMatchComplete(upperQF[1][4], upperQF[1][5]) ? getLoser(upperQF[1][0], upperQF[1][1], upperQF[1][4], upperQF[1][5]) : '';
 
         // Fill Lower Quarterfinals when ready
         if (lr1w1 && uqfl1 && (lowerQF[0][0] !== lr1w1 || lowerQF[0][1] !== uqfl1)) {
             updateBracket('playoffs', 'lowerQuarterfinals', [
-                [lr1w1, uqfl1],
+                [lr1w1, uqfl1, lowerR1[0][2], upperQF[0][3], '', ''],
                 lowerQF[1]
             ]);
         }
         if (lr1w2 && uqfl2 && (lowerQF[1][0] !== lr1w2 || lowerQF[1][1] !== uqfl2)) {
             updateBracket('playoffs', 'lowerQuarterfinals', [
                 lowerQF[0],
-                [lr1w2, uqfl2]
+                [lr1w2, uqfl2, lowerR1[1][2], upperQF[1][3], '', '']
             ]);
         }
 
         // SEMIFINALS (Top 4): Upper QF winners + Lower QF winners
-        const uqfw1 = upperQF && upperQF[0] && isPlayoffMatchComplete(upperQF[0][2], upperQF[0][3]) ? getWinner(upperQF[0][0], upperQF[0][1], upperQF[0][2], upperQF[0][3]) : '';
-        const uqfw2 = upperQF && upperQF[1] && isPlayoffMatchComplete(upperQF[1][2], upperQF[1][3]) ? getWinner(upperQF[1][0], upperQF[1][1], upperQF[1][2], upperQF[1][3]) : '';
-        const lqfw1 = lowerQF && lowerQF[0] && isPlayoffMatchComplete(lowerQF[0][2], lowerQF[0][3]) ? getWinner(lowerQF[0][0], lowerQF[0][1], lowerQF[0][2], lowerQF[0][3]) : '';
-        const lqfw2 = lowerQF && lowerQF[1] && isPlayoffMatchComplete(lowerQF[1][2], lowerQF[1][3]) ? getWinner(lowerQF[1][0], lowerQF[1][1], lowerQF[1][2], lowerQF[1][3]) : '';
+        const uqfw1 = upperQF && upperQF[0] && isPlayoffMatchComplete(upperQF[0][4], upperQF[0][5]) ? getWinner(upperQF[0][0], upperQF[0][1], upperQF[0][4], upperQF[0][5]) : '';
+        const uqfw2 = upperQF && upperQF[1] && isPlayoffMatchComplete(upperQF[1][4], upperQF[1][5]) ? getWinner(upperQF[1][0], upperQF[1][1], upperQF[1][4], upperQF[1][5]) : '';
+        const lqfw1 = lowerQF && lowerQF[0] && isPlayoffMatchComplete(lowerQF[0][4], lowerQF[0][5]) ? getWinner(lowerQF[0][0], lowerQF[0][1], lowerQF[0][4], lowerQF[0][5]) : '';
+        const lqfw2 = lowerQF && lowerQF[1] && isPlayoffMatchComplete(lowerQF[1][4], lowerQF[1][5]) ? getWinner(lowerQF[1][0], lowerQF[1][1], lowerQF[1][4], lowerQF[1][5]) : '';
 
         const semifinals = data.semifinals;
         if (uqfw1 && lqfw1 && (semifinals[0][0] !== uqfw1 || semifinals[0][1] !== lqfw1)) {
             updateBracket('playoffs', 'semifinals', [
-                [uqfw1, lqfw1],
+                [uqfw1, lqfw1, upperQF[0][2], lowerQF[0][2], '', ''],
                 semifinals[1]
             ]);
         }
         if (uqfw2 && lqfw2 && (semifinals[1][0] !== uqfw2 || semifinals[1][1] !== lqfw2)) {
             updateBracket('playoffs', 'semifinals', [
                 semifinals[0],
-                [uqfw2, lqfw2]
+                [uqfw2, lqfw2, upperQF[1][2], lowerQF[1][2], '', '']
             ]);
         }
 
         // GRAND FINAL
         const sf = data.semifinals;
-        const sfw1 = sf && sf[0] && isPlayoffMatchComplete(sf[0][2], sf[0][3]) ? getWinner(sf[0][0], sf[0][1], sf[0][2], sf[0][3]) : '';
-        const sfw2 = sf && sf[1] && isPlayoffMatchComplete(sf[1][2], sf[1][3]) ? getWinner(sf[1][0], sf[1][1], sf[1][2], sf[1][3]) : '';
+        const sfw1 = sf && sf[0] && isPlayoffMatchComplete(sf[0][4], sf[0][5]) ? getWinner(sf[0][0], sf[0][1], sf[0][4], sf[0][5]) : '';
+        const sfw2 = sf && sf[1] && isPlayoffMatchComplete(sf[1][4], sf[1][5]) ? getWinner(sf[1][0], sf[1][1], sf[1][4], sf[1][5]) : '';
         const gf = data.grandFinal;
         if (sfw1 && sfw2 && (gf[0][0] !== sfw1 || gf[0][1] !== sfw2)) {
-            updateBracket('playoffs', 'grandFinal', [[sfw1, sfw2]]);
+            updateBracket('playoffs', 'grandFinal', [[sfw1, sfw2, sf[0][2], sf[1][2], '', '']]);
         }
 
         // CHAMPION
         if (gf && gf[0]) {
-            const champ = isPlayoffMatchComplete(gf[0][2], gf[0][3]) ? getWinner(gf[0][0], gf[0][1], gf[0][2], gf[0][3]) : '';
+            const champ = isPlayoffMatchComplete(gf[0][4], gf[0][5]) ? getWinner(gf[0][0], gf[0][1], gf[0][4], gf[0][5]) : '';
             if (champ && (!data.champion || !data.champion[0] || data.champion[0][0] !== champ)) {
                 updateBracket('playoffs', 'champion', [[champ]]);
             }
         }
     }, [data, updateBracket]);
-
-    function BracketColumn({ label, matches, onMatchUpdate }) {
-        return (
-            <div className="flex flex-col items-center min-w-[200px]">
-                <div className="bg-gray-900 text-white font-bold px-4 py-2 mb-2 rounded text-center w-full text-xs uppercase tracking-wider">
-                    {label}
-                </div>
-                <div className="flex flex-col gap-6 w-full">
-                    {matches.map((match, idx) => (
-                        <PlayoffMatch
-                            key={idx}
-                            team1={match[0]}
-                            team2={match[1]}
-                            team1Logo={match[3]}
-                            team2Logo={match[4]}
-                            score1={match[4]}
-                            score2={match[5]}
-                            onScoreChange={(teamIndex, newScore) => {
-                                const newMatch = [...match];
-                                newMatch[teamIndex + 2] = newScore;
-                                onMatchUpdate(idx, newMatch);
-                            }}
-                        />
-                    ))}
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="flex flex-row w-full justify-center items-center gap-12">
@@ -566,13 +530,15 @@ function PlayoffBracket({ data, updateBracket }) {
                     onMatchUpdate={(i, match) => updateBracket('playoffs', 'grandFinal', data.grandFinal.map((m, idx) => idx === i ? match : m))}
                 />
                 <div className="flex flex-col items-center justify-center min-w-[200px]">
-                    <div className="bg-gray-900 text-white font-bold px-4 py-2 mb-2 rounded text-center w-full text-xs uppercase tracking-wider">
-                        CHAMPION
-                    </div>
-                    {data.champion && data.champion[0] && (
-                        <div className="bg-yellow-400 text-black font-bold text-2xl px-8 py-4 rounded shadow-lg mt-2 w-full text-center">
-                            {data.champion[0][0]}
-                        </div>
+                    {data.champion && data.champion[0] && data.champion[0][0] && (
+                        <>
+                            <div className="bg-gray-900 text-white font-bold px-4 py-2 mb-2 rounded text-center w-full text-xs uppercase tracking-wider">
+                                CHAMPION
+                            </div>
+                            <div className="bg-yellow-400 text-black font-bold text-2xl px-8 py-4 rounded shadow-lg mt-2 w-full text-center">
+                                {data.champion[0][0]}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
