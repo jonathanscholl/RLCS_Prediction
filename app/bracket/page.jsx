@@ -45,34 +45,22 @@ const initialBracket = {
 
 
 
-const regionEventMap = {
-    NA: { event_id: 1, initial: initialBracket },
-    EU: { event_id: 2, initial: initialBracket },
-    MENA: { event_id: 3, initial: initialBracket },
-    // Add more regions as needed
-    // MENA: { event_id: 3, initial: initialMENABracket },
-    // ...
-};
-
-
 export default function BracketPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const region = searchParams.get('region');
-    const region_id = regionEventMap[region]?.event_id;
+    const event = searchParams.get('event');
+
     const [bracketData, setBracketData] = useState(null);
 
     useEffect(() => {
-        if (!region || !regionEventMap[region]) return;
+        if (!event) return;
 
-        const { event_id, initial } = regionEventMap[region];
-
-        fetch(`/api/matches?event_id=${event_id}`)
+        fetch(`/api/matches?event_key=${event}`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data) && data.length >= 8) {
                     const groupA = {
-                        ...initial.groupA,
+                        ...initialBracket.groupA,
                         upperQuarterfinals: data.slice(0, 4).map(match => [
                             match.team1_data?.name,
                             match.team2_data?.name,
@@ -83,7 +71,7 @@ export default function BracketPage() {
                         ])
                     };
                     const groupB = {
-                        ...initial.groupB,
+                        ...initialBracket.groupB,
                         upperQuarterfinals: data.slice(4, 8).map(match => [
                             match.team1_data?.name,
                             match.team2_data?.name,
@@ -96,7 +84,7 @@ export default function BracketPage() {
 
                     };
                     setBracketData({
-                        ...initial,
+                        ...initialBracket,
                         groupA,
                         groupB
                     });
@@ -105,7 +93,7 @@ export default function BracketPage() {
                 }
             })
             .catch(err => console.error('Error fetching matches:', err));
-    }, [region]);
+    }, [event]);
 
     const updateBracket = (group, round, matches) => {
         setBracketData((prev) => {

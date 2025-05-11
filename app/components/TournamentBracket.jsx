@@ -1,7 +1,8 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StandingsTable from './StandingsTable';
 import Image from "next/image";
+import Confetti from 'react-confetti';
 
 
 /**
@@ -398,7 +399,76 @@ function BracketColumn({ label, matches, onMatchUpdate }) {
     );
 }
 
+function ChampionModal({ isOpen, onClose, champion }) {
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [windowSize, setWindowSize] = useState({
+        width: typeof window !== 'undefined' ? window.innerWidth : 0,
+        height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    });
+
+    useEffect(() => {
+        if (isOpen) {
+            setShowConfetti(true);
+            const timer = setTimeout(() => setShowConfetti(false), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Backdrop */}
+            <div
+                className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+                onClick={onClose}
+            />
+
+            {/* Confetti */}
+            {showConfetti && (
+                <Confetti
+                    width={windowSize.width}
+                    height={windowSize.height}
+                    colors={['#FFD700', '#FFA500', '#FFC0CB']}
+                    numberOfPieces={200}
+                    recycle={false}
+                />
+            )}
+
+            {/* Modal */}
+            <div className="relative bg-gray-900 rounded-lg p-8 max-w-md w-full mx-4 transform transition-all">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-yellow-400 mb-4">CHAMPION</h2>
+                    <div className="bg-yellow-400 text-black font-bold text-4xl px-8 py-6 rounded shadow-lg mb-6">
+                        {champion}
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function PlayoffBracket({ data, updateBracket }) {
+    const [showChampionModal, setShowChampionModal] = useState(false);
+
     // Add back the useEffect to handle initial playoff bracket population
     React.useEffect(() => {
         // Get the complete bracket data
@@ -464,6 +534,11 @@ function PlayoffBracket({ data, updateBracket }) {
                 updateBracket,
                 true
             );
+
+            // Show champion modal if this was the grand final
+            if (round === 'grandFinal') {
+                setShowChampionModal(true);
+            }
         }
     };
 
@@ -502,17 +577,22 @@ function PlayoffBracket({ data, updateBracket }) {
                 />
                 <div className="flex flex-col items-center justify-center min-w-[200px]">
                     {data.champion && data.champion[0] && data.champion[0][0] && (
-                        <>
-                            <div className="bg-gray-900 text-white font-bold px-4 py-2 mb-2 rounded text-center w-full text-xs uppercase tracking-wider">
-                                CHAMPION
-                            </div>
-                            <div className="bg-yellow-400 text-black font-bold text-2xl px-8 py-4 rounded shadow-lg mt-2 w-full text-center">
-                                {data.champion[0][0]}
-                            </div>
-                        </>
+                        <button
+                            onClick={() => setShowChampionModal(true)}
+                            className="bg-yellow-400 text-black font-bold text-2xl px-8 py-4 rounded shadow-lg hover:bg-yellow-500 transition-colors"
+                        >
+                            View Champion
+                        </button>
                     )}
                 </div>
             </div>
+
+            {/* Champion Modal */}
+            <ChampionModal
+                isOpen={showChampionModal}
+                onClose={() => setShowChampionModal(false)}
+                champion={data.champion?.[0]?.[0]}
+            />
         </div>
     );
 }
@@ -607,7 +687,7 @@ function getStandingsFromBracket(bracketData) {
 export default function TournamentBracket({ bracketData, updateBracket }) {
     const standings = getStandingsFromBracket(bracketData);
     const championDetermined = Boolean(bracketData.playoffs.champion?.[0]?.[0]);
-    const [activeView, setActiveView] = useState('overview'); // 'overview', 'groupA', 'groupB', 'playoffs'
+    const [activeView, setActiveView] = useState('groupA'); // Changed default to 'groupA'
 
     // Store the complete bracket data in window for access by child components
     React.useEffect(() => {
@@ -617,6 +697,20 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
 
     const renderGroupA = () => (
         <div className="flex flex-col mx-10">
+            <div className="flex justify-center gap-4 mb-6">
+                <button
+                    onClick={() => setActiveView('groupB')}
+                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                >
+                    Group B
+                </button>
+                <button
+                    onClick={() => setActiveView('playoffs')}
+                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                >
+                    Playoffs
+                </button>
+            </div>
             <h2 className="text-xl font-semibold text-center mb-6">GROUP A</h2>
             <div className="flex flex-row justify-center">
                 <BracketGrid
@@ -630,6 +724,20 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
 
     const renderGroupB = () => (
         <div className="flex flex-col mx-10">
+            <div className="flex justify-center gap-4 mb-6">
+                <button
+                    onClick={() => setActiveView('groupA')}
+                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                >
+                    Group A
+                </button>
+                <button
+                    onClick={() => setActiveView('playoffs')}
+                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                >
+                    Playoffs
+                </button>
+            </div>
             <h2 className="text-xl font-semibold text-center mb-6">GROUP B</h2>
             <div className="flex flex-row justify-center">
                 <BracketGrid
@@ -643,79 +751,30 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
 
     const renderPlayoffs = () => (
         <div className="flex-1">
+            <div className="flex justify-center gap-4 mb-6">
+                <button
+                    onClick={() => setActiveView('groupA')}
+                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                >
+                    Group A
+                </button>
+                <button
+                    onClick={() => setActiveView('groupB')}
+                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                >
+                    Group B
+                </button>
+            </div>
             <PlayoffBracket data={bracketData.playoffs} updateBracket={updateBracket} />
         </div>
     );
 
-    const renderOverview = () => (
-        <>
-            {/* Group Stage */}
-
-            <div className="flex justify-between items-center mb-10">
-                <h1 className="text-3xl font-bold text-center flex-1">RLCS Bracket Predictions</h1>
-
-            </div>
-            <div className="flex flex-row justify-center gap-16 mb-16">
-
-
-                {/* Group A Bracket */}
-
-                <h2 className="text-xl font-semibold text-center mb-6">
-
-                    <button
-                        onClick={() => setActiveView('groupA')}
-                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Group A
-                    </button>
-
-                </h2>
-
-                <h2 className="text-xl font-semibold text-center mb-6">
-
-                    <button
-                        onClick={() => setActiveView('groupB')}
-                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Group B
-                    </button>
-
-                </h2>
-
-                <h2 className="text-xl font-semibold text-center mb-6">
-
-                    <button
-                        onClick={() => setActiveView('playoffs')}
-                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Playoffs
-                    </button>
-
-                </h2>
-            </div>
-        </>
-    );
-
     return (
         <div className="relative">
-
-
             <div className="relative p-8 text-white">
-
-                {activeView !== 'overview' && (
-                    <button
-                        onClick={() => setActiveView('overview')}
-                        className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Back to Overview
-                    </button>
-                )}
-
-                {activeView === 'overview' && renderOverview()}
                 {activeView === 'groupA' && renderGroupA()}
                 {activeView === 'groupB' && renderGroupB()}
                 {activeView === 'playoffs' && renderPlayoffs()}
-
             </div>
         </div>
     );

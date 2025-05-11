@@ -3,28 +3,20 @@ import { supabase } from "@/app/utils/supabaseClient";
 export async function GET(req) {
   // Get event_id from query string
   const { searchParams } = new URL(req.url);
-  const event_key = searchParams.get("event_key");
+  const region_key = searchParams.get("region_key");
+
+  console.log(region_key);
 
   const { data, error } = await supabase
-    .from("matches")
+    .from("events")
     .select(
       `
-    team1,
-    team2,
-    event_key,
-    team1_data:teams!team1 (
-      key,
-      name,
-      logo
-    ),
-    team2_data:teams!team2 (
-      key,
-      name,
-      logo
-    )
+    name,
+    key,
+    region_key
   `
     )
-    .eq("event_key", event_key);
+    .eq("region_key", region_key);
 
   if (error) {
     console.log(error);

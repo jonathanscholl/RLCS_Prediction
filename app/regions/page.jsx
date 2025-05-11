@@ -14,7 +14,7 @@ export default function RegionsPage() {
     const router = useRouter();
 
     const handleRegion = (regionKey) => {
-        router.push(`/bracket?region=${regionKey}`);
+        router.push(`/events?region=${regionKey}`);
     };
 
     return (
