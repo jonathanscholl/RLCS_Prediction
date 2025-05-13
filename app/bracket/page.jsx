@@ -47,6 +47,7 @@ export default function BracketPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const eventKey = searchParams.get('event');
+    const fromProfile = searchParams.get('from') === 'profile';
 
     const [bracketData, setBracketData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -55,15 +56,21 @@ export default function BracketPage() {
     useEffect(() => {
         async function loadBracketData() {
             try {
-                // First check if we have a selected bracket in localStorage
-                const selectedBracket = localStorage.getItem('selectedBracket');
-                if (selectedBracket) {
-                    const parsedBracket = JSON.parse(selectedBracket);
-                    setBracketData(parsedBracket.bracket_data);
-                    setIsReadOnly(true);
+                // Only check localStorage if coming from profile page
+                if (fromProfile) {
+                    const selectedBracket = localStorage.getItem('selectedBracket');
+                    if (selectedBracket) {
+                        const parsedBracket = JSON.parse(selectedBracket);
+                        setBracketData(parsedBracket.bracket_data);
+                        setIsReadOnly(true);
+                        localStorage.removeItem('selectedBracket');
+                        setLoading(false);
+                        return;
+                    }
+                }
 
-                } else if (eventKey) {
-                    // Only fetch from API if we don't have a selected bracket
+                // If not from profile or no selected bracket, fetch from API
+                else {
                     const response = await fetch(`/api/matches?event_key=${eventKey}`);
                     const data = await response.json();
 
@@ -106,7 +113,7 @@ export default function BracketPage() {
         }
 
         loadBracketData();
-    }, [eventKey]);
+    }, [eventKey, fromProfile]);
 
     const updateBracket = (group, round, matches) => {
         setBracketData(prev => ({
@@ -135,7 +142,13 @@ export default function BracketPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-900">
+
+        <div className="relative">
+            <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-80 filter grayscale"
+                style={{ backgroundImage: 'url("background.png")' }}
+            />
+
             <TournamentBracket
                 bracketData={bracketData}
                 updateBracket={updateBracket}

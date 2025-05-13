@@ -107,8 +107,9 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
  * @param {string} props.score2 - Second team's score
  * @param {Function} props.onScoreChange - Callback when score changes
  * @param {boolean} props.isPlayoff - Whether this is a playoff match (BO7) or group stage match (BO5)
+ * @param {boolean} props.readOnly - Whether the component is read-only
  */
-function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, isPlayoff = false }) {
+function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, isPlayoff = false, readOnly = false }) {
     return (
         <MatchDisplay
             team1={team1}
@@ -119,6 +120,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
             score2={score2}
             onScoreChange={onScoreChange}
             maxScore={isPlayoff ? 4 : 3}
+            readOnly={readOnly}
         />
     );
 }
@@ -129,8 +131,9 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
  * @param {string} props.title - Round title
  * @param {Array} props.matches - Array of matches in this round
  * @param {Function} props.onMatchUpdate - Callback when a match is updated
+ * @param {boolean} props.readOnly - Whether the component is read-only
  */
-function BracketRound({ title, matches, onMatchUpdate }) {
+function BracketRound({ title, matches, onMatchUpdate, readOnly = false }) {
     return (
         <div className="space-y-4">
             <div className="bg-gray-900 text-white py-1 px-2 text-center">
@@ -150,6 +153,7 @@ function BracketRound({ title, matches, onMatchUpdate }) {
                         newMatch[teamIndex + 4] = newScore;
                         onMatchUpdate(index, newMatch);
                     }}
+                    readOnly={readOnly}
                 />
             ))}
         </div>
@@ -257,8 +261,9 @@ function advanceTeam(data, groupKey, round, index, winner, loser, winnerLogo, lo
  * @param {string} props.groupKey - Group identifier (A or B)
  * @param {Object} props.data - Bracket data for this group
  * @param {Function} props.updateBracket - Function to update bracket data
+ * @param {boolean} props.readOnly - Whether the component is read-only
  */
-function BracketGrid({ groupKey, data, updateBracket }) {
+function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
     const handleMatchUpdate = (round, index, newMatch) => {
         const updated = [...data[round]];
         updated[index] = newMatch;
@@ -297,12 +302,14 @@ function BracketGrid({ groupKey, data, updateBracket }) {
                     title="UPPER QUARTERFINALS (BO5)"
                     matches={data.upperQuarterfinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', i, match)}
+                    readOnly={readOnly}
                 />
                 <div className="flex justify-center flex-grow">
                     <BracketRound
                         title="UPPER SEMIFINALS (BO5)"
                         matches={data.upperSemifinals}
                         onMatchUpdate={(i, match) => handleMatchUpdate('upperSemifinals', i, match)}
+                        readOnly={readOnly}
                     />
                 </div>
                 <div className="flex justify-center">
@@ -310,6 +317,7 @@ function BracketGrid({ groupKey, data, updateBracket }) {
                         title="QUALIFIED"
                         matches={data.qualified}
                         onMatchUpdate={(i, match) => handleMatchUpdate('qualified', i, match)}
+                        readOnly={readOnly}
                     />
                 </div>
             </div>
@@ -320,12 +328,14 @@ function BracketGrid({ groupKey, data, updateBracket }) {
                     title="LOWER QUARTERFINALS (BO5)"
                     matches={data.lowerQuarterfinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
+                    readOnly={readOnly}
                 />
                 <div className="flex justify-center flex-grow">
                     <BracketRound
                         title="LOWER SEMIFINALS (BO5)"
                         matches={data.lowerSemifinals}
                         onMatchUpdate={(i, match) => handleMatchUpdate('lowerSemifinals', i, match)}
+                        readOnly={readOnly}
                     />
                 </div>
                 <div className="flex justify-center">
@@ -333,6 +343,7 @@ function BracketGrid({ groupKey, data, updateBracket }) {
                         title="QUALIFIED"
                         matches={data.lowerFinal}
                         onMatchUpdate={(i, match) => handleMatchUpdate('lowerFinal', i, match)}
+                        readOnly={readOnly}
                     />
                 </div>
             </div>
@@ -374,7 +385,7 @@ function PlayoffRound({ title, matches, onMatchUpdate }) {
     );
 }
 
-function BracketColumn({ label, matches, onMatchUpdate }) {
+function BracketColumn({ label, matches, onMatchUpdate, readOnly = false }) {
     return (
         <div className="flex flex-col items-center min-w-[200px]">
             <div className="bg-gray-900 text-white font-bold px-4 py-2 mb-2 rounded text-center w-full text-xs uppercase tracking-wider">
@@ -396,6 +407,7 @@ function BracketColumn({ label, matches, onMatchUpdate }) {
                             onMatchUpdate(idx, newMatch);
                         }}
                         isPlayoff={true}
+                        readOnly={readOnly}
                     />
                 ))}
             </div>
@@ -529,7 +541,7 @@ function ChampionModal({ isOpen, onClose, champion }) {
     );
 }
 
-function PlayoffBracket({ data, updateBracket }) {
+function PlayoffBracket({ data, updateBracket, readOnly = false }) {
     const [showChampionModal, setShowChampionModal] = useState(false);
 
     // Add back the useEffect to handle initial playoff bracket population
@@ -612,6 +624,7 @@ function PlayoffBracket({ data, updateBracket }) {
                 label="LOWER ROUND 1 (BO7)"
                 matches={data.lowerRound1}
                 onMatchUpdate={(i, match) => handleMatchUpdate('lowerRound1', i, match)}
+                readOnly={readOnly}
             />
             {/* Quarterfinals: upper on top, lower below */}
             <div className="flex flex-col justify-center items-center gap-16">
@@ -619,11 +632,13 @@ function PlayoffBracket({ data, updateBracket }) {
                     label="UPPER QUARTERFINALS (BO7)"
                     matches={data.upperQuarterfinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', i, match)}
+                    readOnly={readOnly}
                 />
                 <BracketColumn
                     label="LOWER QUARTERFINALS (BO7)"
                     matches={data.lowerQuarterfinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
+                    readOnly={readOnly}
                 />
             </div>
             {/* Semifinals, Grand Final, Champion - each in their own column */}
@@ -632,11 +647,13 @@ function PlayoffBracket({ data, updateBracket }) {
                     label="SEMIFINALS (TOP 4, BO7)"
                     matches={data.semifinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('semifinals', i, match)}
+                    readOnly={readOnly}
                 />
                 <BracketColumn
                     label="GRAND FINAL (BO7)"
                     matches={data.grandFinal}
                     onMatchUpdate={(i, match) => handleMatchUpdate('grandFinal', i, match)}
+                    readOnly={readOnly}
                 />
                 <div className="flex flex-col items-center justify-center min-w-[200px]">
                     {data.champion && data.champion[0] && data.champion[0][0] && (
@@ -782,6 +799,7 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
                     groupKey="groupA"
                     data={bracketData.groupA}
                     updateBracket={updateBracket}
+                    readOnly={readOnly}
                 />
             </div>
         </div>
@@ -809,6 +827,7 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
                     groupKey="groupB"
                     data={bracketData.groupB}
                     updateBracket={updateBracket}
+                    readOnly={readOnly}
                 />
             </div>
         </div>
@@ -830,7 +849,11 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
                     Group B
                 </button>
             </div>
-            <PlayoffBracket data={bracketData.playoffs} updateBracket={updateBracket} />
+            <PlayoffBracket
+                data={bracketData.playoffs}
+                updateBracket={updateBracket}
+                readOnly={readOnly}
+            />
         </div>
     );
 
