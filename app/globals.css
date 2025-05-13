@@ -28,8 +28,7 @@
   }
 
   .rlcs-card {
-    @apply bg-opacity-90 backdrop-blur-lg rounded-xl border-2;
-    background-color: var(--rlcs-dark);
+    @apply bg-rlcs-dark/90 backdrop-blur-lg rounded-xl border-2;
     border-color: var(--rlcs-accent);
   }
 
