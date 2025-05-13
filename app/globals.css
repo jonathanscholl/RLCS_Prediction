@@ -1,49 +1,10 @@
 @import "tailwindcss";
-
-@layer base {
-  :root {
-    --rlcs-primary: #FF7B00;
-    --rlcs-secondary: #00A3FF;
-    --rlcs-accent: #FFD700;
-    --rlcs-dark: #0A1128;
-    --rlcs-darker: #060914;
-  }
+@plugin "daisyui" {
+  themes:
+    light --default,
+    dark --prefersdark;
 }
 
-@layer components {
-  .rlcs-gradient {
-    background: linear-gradient(135deg, var(--rlcs-primary), var(--rlcs-secondary));
-  }
-  
-  .rlcs-button {
-    @apply px-6 py-3 rounded-lg font-bold text-lg transition-all duration-300;
-    background: linear-gradient(135deg, var(--rlcs-primary), var(--rlcs-secondary));
-    border: 2px solid transparent;
-  }
-
-  .rlcs-button:hover {
-    @apply transform scale-105;
-    background: linear-gradient(135deg, var(--rlcs-secondary), var(--rlcs-primary));
-    border-color: var(--rlcs-accent);
-  }
-
-  .rlcs-card {
-    @apply bg-rlcs-dark/90 backdrop-blur-lg rounded-xl border-2;
-    border-color: var(--rlcs-accent);
-  }
-
-  .rlcs-title {
-    @apply text-4xl md:text-6xl font-extrabold;
-    background: linear-gradient(135deg, var(--rlcs-primary), var(--rlcs-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-}
-
-body {
-  background-color: var(--rlcs-darker);
-  background-image: url('/background.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+@theme inline {
+  --font-sans: var(--font-figtree);
 }
