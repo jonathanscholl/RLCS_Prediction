@@ -12,7 +12,7 @@ const initialBracket = {
             ['', ''],
             ['', ''],
         ],
-        //TODO: 2d arrays for pb pic space for all of the rounds
+
         upperSemifinals: [['Winner of UPQF1', 'Winner of UPQF2'], ['Winner of UPQF3', 'Winner of UPQF3']],
         qualified: [['Winner of Semifinals 1', 'Winner of Semifinals 2']],
         lowerQuarterfinals: [['Loser of UPQF1', 'Loser of UPQF2'], ['Loser of UPQF3', 'Loser of UPQF3']],
@@ -43,88 +43,105 @@ const initialBracket = {
     },
 };
 
-
-
 export default function BracketPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const event = searchParams.get('event');
+    const eventKey = searchParams.get('event');
 
     const [bracketData, setBracketData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
     useEffect(() => {
-        if (!event) return;
+        async function loadBracketData() {
+            try {
+                // First check if we have a selected bracket in localStorage
+                const selectedBracket = localStorage.getItem('selectedBracket');
+                if (selectedBracket) {
+                    const parsedBracket = JSON.parse(selectedBracket);
+                    setBracketData(parsedBracket.bracket_data);
+                    setIsReadOnly(true);
 
-        fetch(`/api/matches?event_key=${event}`)
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data) && data.length >= 8) {
-                    const groupA = {
-                        ...initialBracket.groupA,
-                        upperQuarterfinals: data.slice(0, 4).map(match => [
-                            match.team1_data?.name,
-                            match.team2_data?.name,
-                            match.team1_data?.logo,
-                            match.team2_data?.logo,
-                            '', // initial score1
-                            ''  // initial score2
-                        ])
-                    };
-                    const groupB = {
-                        ...initialBracket.groupB,
-                        upperQuarterfinals: data.slice(4, 8).map(match => [
-                            match.team1_data?.name,
-                            match.team2_data?.name,
-                            match.team1_data?.logo,
-                            match.team2_data?.logo,
-                            '', // initial score1
-                            ''  // initial score2
-                        ])
+                } else if (eventKey) {
+                    // Only fetch from API if we don't have a selected bracket
+                    const response = await fetch(`/api/matches?event_key=${eventKey}`);
+                    const data = await response.json();
 
-
-                    };
-                    setBracketData({
-                        ...initialBracket,
-                        groupA,
-                        groupB
-                    });
-
-                    console.log(groupA)
+                    if (Array.isArray(data) && data.length >= 8) {
+                        const groupA = {
+                            ...initialBracket.groupA,
+                            upperQuarterfinals: data.slice(0, 4).map(match => [
+                                match.team1_data?.name,
+                                match.team2_data?.name,
+                                match.team1_data?.logo,
+                                match.team2_data?.logo,
+                                '', // initial score1
+                                ''  // initial score2
+                            ])
+                        };
+                        const groupB = {
+                            ...initialBracket.groupB,
+                            upperQuarterfinals: data.slice(4, 8).map(match => [
+                                match.team1_data?.name,
+                                match.team2_data?.name,
+                                match.team1_data?.logo,
+                                match.team2_data?.logo,
+                                '', // initial score1
+                                ''  // initial score2
+                            ])
+                        };
+                        setBracketData({
+                            ...initialBracket,
+                            groupA,
+                            groupB
+                        });
+                        setIsReadOnly(false);
+                    }
                 }
-            })
-            .catch(err => console.error('Error fetching matches:', err));
-    }, [event]);
+            } catch (error) {
+                console.error('Error loading bracket data:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadBracketData();
+    }, [eventKey]);
 
     const updateBracket = (group, round, matches) => {
-        setBracketData((prev) => {
-            const newData = {
-                ...prev,
-                [group]: {
-                    ...prev[group],
-                    [round]: matches,
-                },
-            };
-            // (copy the playoff auto-advance logic from TournamentBracket here if needed)
-            return newData;
-        });
+        setBracketData(prev => ({
+            ...prev,
+            [group]: {
+                ...prev[group],
+                [round]: matches
+            }
+        }));
     };
 
-    if (!bracketData) return null;
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+            </div>
+        );
+    }
+
+    if (!bracketData) {
+        return (
+            <div className="text-white text-center p-4">
+                No bracket data found.
+            </div>
+        );
+    }
 
     return (
-
-        <div className="relative">
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-80 filter grayscale"
-                style={{ backgroundImage: 'url("background.png")' }}
+        <div className="min-h-screen bg-gray-900">
+            <TournamentBracket
+                bracketData={bracketData}
+                updateBracket={updateBracket}
+                event_key={eventKey}
+                readOnly={isReadOnly}
             />
-
-            <div className="min-h-screen text-white p-4">
-
-                <TournamentBracket bracketData={bracketData} updateBracket={updateBracket} event_key={event} />
-            </div>
-
         </div>
-
     );
 } 

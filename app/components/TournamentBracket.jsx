@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import StandingsTable from './StandingsTable';
 import Image from "next/image";
 import Confetti from 'react-confetti';
+import { supabase } from '@/app/utils/supabaseClient';
 
 
 /**
@@ -16,8 +17,9 @@ import Confetti from 'react-confetti';
  * @param {string} props.score2 - Second team's score
  * @param {Function} props.onScoreChange - Callback when score changes
  * @param {number} props.maxScore - Maximum score to win (3 for BO5, 4 for BO7)
+ * @param {boolean} props.readOnly - Whether the component is read-only
  */
-function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, maxScore = 3 }) {
+function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, maxScore = 3, readOnly = false }) {
     const team1Score = parseInt(score1);
     const team2Score = parseInt(score2);
     const team1Won = team1Score === maxScore;
@@ -54,6 +56,7 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team1Won)}`}
                     value={score1}
                     onChange={(e) => onScoreChange(0, e.target.value)}
+                    readOnly={readOnly}
                 />
             </div>
 
@@ -79,6 +82,7 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team2Won)}`}
                     value={score2}
                     onChange={(e) => onScoreChange(1, e.target.value)}
+                    readOnly={readOnly}
                 />
             </div>
 
@@ -427,11 +431,29 @@ function ChampionModal({ isOpen, onClose, champion }) {
     }, []);
 
     const handleBracketSubmit = async (event_key, bracketData) => {
+        // Show confirmation dialog first
+        const confirmed = window.confirm(
+            "Are you sure you want to submit your bracket? You will not be able to make changes after submission."
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
         try {
+            // Get the session token from Supabase
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                alert('Please sign in to submit your bracket');
+                return;
+            }
+
             const response = await fetch('/api/brackets', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
                 },
                 body: JSON.stringify({
                     event_key,
@@ -442,11 +464,16 @@ function ChampionModal({ isOpen, onClose, champion }) {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to submit bracket');
+                if (response.status === 409) {
+                    alert('You have already submitted a bracket for this event. You cannot submit multiple brackets.');
+                } else {
+                    throw new Error(data.error || 'Failed to submit bracket');
+                }
+                return;
             }
 
-            // Show success message or handle successful submission
-            alert('Bracket submitted successfully!');
+            // Show success message
+            alert('Bracket submitted successfully! Remember, you cannot make changes after submission.');
             onClose(); // Close the modal after successful submission
         } catch (error) {
             console.error('Error submitting bracket:', error);
@@ -717,21 +744,21 @@ function getStandingsFromBracket(bracketData) {
  *       playoffs: { ... }
  *     }
  *   - updateBracket: (group, round, matches) => void
+ *   - event_key: string
+ *   - readOnly: boolean
  *
  * This component is now reusable for any bracketData shape matching the above.
  */
-export default function TournamentBracket({ bracketData, updateBracket, event_key }) {
+export default function TournamentBracket({ bracketData, updateBracket, event_key, readOnly = false }) {
     const standings = getStandingsFromBracket(bracketData);
     const championDetermined = Boolean(bracketData.playoffs.champion?.[0]?.[0]);
-    const [activeView, setActiveView] = useState('groupA'); // Changed default to 'groupA'
+    const [activeView, setActiveView] = useState('groupA');
 
     // Store the complete bracket data in window for access by child components
     React.useEffect(() => {
         window.bracketData = bracketData;
-        window.event_key = event_key
-        console.log(bracketData)
-        console.log(event_key)
-    }, [bracketData]);
+        window.event_key = event_key;
+    }, [bracketData, event_key]);
 
     const renderGroupA = () => (
         <div className="flex flex-col mx-10">

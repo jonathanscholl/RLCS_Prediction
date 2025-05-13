@@ -1,6 +1,7 @@
 // app/layout.tsx or layout.js
 import './globals.css';
 import { Poppins, Figtree } from 'next/font/google';
+import Navbar from './components/Navbar';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -17,14 +18,19 @@ const figtree = Figtree({
 });
 
 export const metadata = {
-  title: 'My App',
-  description: 'Using Poppins with Tailwind',
+  title: 'RLCS Predictions',
+  description: 'Predict RLCS tournament outcomes',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${figtree.variable} font-sans`}>{children}</body>
+      <body className={`${figtree.variable} font-sans bg-gray-900 min-h-screen`}>
+        <Navbar />
+        <main className="pt-16">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }

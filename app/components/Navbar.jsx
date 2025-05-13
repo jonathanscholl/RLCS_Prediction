@@ -1,0 +1,88 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/app/utils/supabaseClient';
+import { useRouter } from 'next/navigation';
+
+export default function Navbar() {
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
+
+    useEffect(() => {
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+            setIsLoading(false);
+        });
+
+        // Listen for auth changes
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <nav className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <div className="flex-shrink-0">
+                            <span className="text-white text-xl font-bold">RLCS Predictions</span>
+                        </div>
+                        <div className="p-2 rounded-full bg-gray-700">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6 animate-spin"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        );
+    }
+
+    return (
+        <nav className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                    <div className="flex-shrink-0">
+                        <span className="text-white text-xl font-bold">RLCS Predictions</span>
+                    </div>
+                    <button
+                        onClick={() => router.push('/auth')}
+                        className="p-2 rounded-full bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    );
+} 
