@@ -121,7 +121,7 @@ export default function BracketPage() {
 
             <div className="min-h-screen text-white p-4">
 
-                <TournamentBracket bracketData={bracketData} updateBracket={updateBracket} />
+                <TournamentBracket bracketData={bracketData} updateBracket={updateBracket} event_key={event} />
             </div>
 
         </div>

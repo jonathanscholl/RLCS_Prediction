@@ -426,6 +426,34 @@ function ChampionModal({ isOpen, onClose, champion }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const handleBracketSubmit = async (event_key, bracketData) => {
+        try {
+            const response = await fetch('/api/brackets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    event_key,
+                    bracket_data: bracketData
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to submit bracket');
+            }
+
+            // Show success message or handle successful submission
+            alert('Bracket submitted successfully!');
+            onClose(); // Close the modal after successful submission
+        } catch (error) {
+            console.error('Error submitting bracket:', error);
+            alert('Failed to submit bracket. Please try again.');
+        }
+    }
+
     if (!isOpen) return null;
 
     return (
@@ -454,12 +482,20 @@ function ChampionModal({ isOpen, onClose, champion }) {
                     <div className="bg-yellow-400 text-black font-bold text-4xl px-8 py-6 rounded shadow-lg mb-6">
                         {champion}
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-yellow-400 hover:text-black transition-colors"
-                    >
-                        Close
-                    </button>
+                    <div className='flex flex-row justify-center gap-5'>
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-yellow-400 hover:text-black transition-colors"
+                        >
+                            Close
+                        </button>
+                        <button
+                            onClick={() => handleBracketSubmit(event_key, bracketData)}
+                            className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-green-400 hover:text-black transition-colors"
+                        >
+                            Submit your bracket
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -684,7 +720,7 @@ function getStandingsFromBracket(bracketData) {
  *
  * This component is now reusable for any bracketData shape matching the above.
  */
-export default function TournamentBracket({ bracketData, updateBracket }) {
+export default function TournamentBracket({ bracketData, updateBracket, event_key }) {
     const standings = getStandingsFromBracket(bracketData);
     const championDetermined = Boolean(bracketData.playoffs.champion?.[0]?.[0]);
     const [activeView, setActiveView] = useState('groupA'); // Changed default to 'groupA'
@@ -692,7 +728,9 @@ export default function TournamentBracket({ bracketData, updateBracket }) {
     // Store the complete bracket data in window for access by child components
     React.useEffect(() => {
         window.bracketData = bracketData;
+        window.event_key = event_key
         console.log(bracketData)
+        console.log(event_key)
     }, [bracketData]);
 
     const renderGroupA = () => (
