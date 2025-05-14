@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { supabase } from './utils/supabaseClient';
+import Leaderboard from './components/Leaderboard';
 
 async function getTrendingEvents() {
   const { data: events, error } = await supabase
@@ -21,7 +22,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-base-200">
       {/* Hero Section */}
-      <div className="hero min-h-[40vh] bg-base-200">
+      <div className="hero min-h-[50vh] bg-base-200">
         <div className="hero-content text-center">
           <div className="max-w-xl">
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4">RLCS Bracket Predictions</h1>
@@ -37,27 +38,41 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Trending Events Section */}
-      <div className="container mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8">Trending Events</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {trendingEvents.map((event) => (
-            <Link
-              key={event.id}
-              href={`/bracket?event=${event.key}`}
-              className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="card-body flex flex-col items-center">
-                <h3 className="card-title text-xl">{event.name}</h3>
-                <p className="text-base-content/70">{event.region}</p>
-                <div className="card-actions justify-center mt-4">
-                  <button className="btn btn-primary btn-sm">
-                    Predict now
-                  </button>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Trending Events */}
+          <div className="lg:col-span-2">
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h2 className="card-title">Trending Events</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {trendingEvents.map((event) => (
+                    <Link
+                      key={event.id}
+                      href={`/bracket?event=${event.key}`}
+                      className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300"
+                    >
+                      <div className="card-body flex flex-col items-center">
+                        <h3 className="card-title text-xl">{event.name}</h3>
+                        <p className="text-base-content/70">{event.region}</p>
+                        <div className="card-actions justify-center mt-4">
+                          <button className="btn btn-primary btn-sm">
+                            Predict now
+                          </button>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </div>
-            </Link>
-          ))}
+            </div>
+          </div>
+
+          {/* Leaderboard */}
+          <div className="lg:col-span-1">
+            <Leaderboard />
+          </div>
         </div>
       </div>
 

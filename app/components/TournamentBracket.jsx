@@ -779,16 +779,22 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
 
     const renderGroupA = () => (
         <div className="flex flex-col mx-10">
-            <div className="flex justify-center gap-4 mb-6">
+            <div className="flex flex-wrap gap-2 justify-center mb-8">
+                <button
+                    onClick={() => setActiveView('groupA')}
+                    className={`btn ${activeView === 'groupA' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                    Group A
+                </button>
                 <button
                     onClick={() => setActiveView('groupB')}
-                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    className={`btn ${activeView === 'groupB' ? 'btn-primary' : 'btn-ghost'}`}
                 >
                     Group B
                 </button>
                 <button
                     onClick={() => setActiveView('playoffs')}
-                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    className={`btn ${activeView === 'playoffs' ? 'btn-primary' : 'btn-ghost'}`}
                 >
                     Playoffs
                 </button>
@@ -807,16 +813,22 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
 
     const renderGroupB = () => (
         <div className="flex flex-col mx-10">
-            <div className="flex justify-center gap-4 mb-6">
+            <div className="flex flex-wrap gap-2 justify-center mb-8">
                 <button
                     onClick={() => setActiveView('groupA')}
-                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    className={`btn ${activeView === 'groupA' ? 'btn-primary' : 'btn-ghost'}`}
                 >
                     Group A
                 </button>
                 <button
+                    onClick={() => setActiveView('groupB')}
+                    className={`btn ${activeView === 'groupB' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                    Group B
+                </button>
+                <button
                     onClick={() => setActiveView('playoffs')}
-                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    className={`btn ${activeView === 'playoffs' ? 'btn-primary' : 'btn-ghost'}`}
                 >
                     Playoffs
                 </button>
@@ -835,18 +847,24 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
 
     const renderPlayoffs = () => (
         <div className="flex-1">
-            <div className="flex justify-center gap-4 mb-6">
+            <div className="flex flex-wrap gap-2 justify-center mb-8">
                 <button
                     onClick={() => setActiveView('groupA')}
-                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    className={`btn ${activeView === 'groupA' ? 'btn-primary' : 'btn-ghost'}`}
                 >
                     Group A
                 </button>
                 <button
                     onClick={() => setActiveView('groupB')}
-                    className="px-6 py-2 rounded font-bold text-lg shadow bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                    className={`btn ${activeView === 'groupB' ? 'btn-primary' : 'btn-ghost'}`}
                 >
                     Group B
+                </button>
+                <button
+                    onClick={() => setActiveView('playoffs')}
+                    className={`btn ${activeView === 'playoffs' ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                    Playoffs
                 </button>
             </div>
             <PlayoffBracket

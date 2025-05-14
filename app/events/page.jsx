@@ -100,7 +100,7 @@ export default function EventsPage() {
                                     <div className="badge badge-primary">{event.region_key}</div>
 
                                 </div>
-                                <div className="card-actions justify-end mt-4">
+                                <div className="card-actions justify-center mt-4">
                                     <button className="btn btn-primary btn-sm">
                                         Predict now
                                     </button>
