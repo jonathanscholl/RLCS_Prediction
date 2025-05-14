@@ -22,65 +22,55 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the request body
-    const { event_key, bracket_data } = await request.json();
+    const { event_key, bracket_data, is_final } = await request.json();
 
-    if (!event_key || !bracket_data) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already has a bracket for this event
-    const { data: existingBracket, error: checkError } = await supabase
+    // Check if a bracket already exists for this user and event
+    const { data: existingBracket } = await supabase
       .from("user_brackets")
-      .select("id")
+      .select("*")
       .eq("user_id", user.id)
       .eq("event_key", event_key)
       .single();
 
-    if (checkError && checkError.code !== "PGRST116") {
-      // PGRST116 is the "no rows returned" error
-      console.error("Error checking existing bracket:", checkError);
+    if (existingBracket && !is_final) {
       return NextResponse.json(
-        { error: "Failed to check existing bracket" },
-        { status: 500 }
-      );
-    }
-
-    if (existingBracket) {
-      return NextResponse.json(
-        { error: "You have already submitted a bracket for this event" },
+        { error: "Bracket already exists for this event" },
         { status: 409 }
       );
     }
 
-    // Insert the bracket data
-    const { data, error } = await supabase
-      .from("user_brackets")
-      .insert([
-        {
-          event_key,
-          bracket_data,
-          user_id: user.id,
-        },
-      ])
-      .select();
+    // If this is a final bracket, check if one already exists
+    if (is_final) {
+      const { data: existingFinalBracket } = await supabase
+        .from("user_brackets")
+        .select("*")
+        .eq("event_key", event_key)
+        .eq("is_final", true)
+        .single();
 
-    if (error) {
-      console.error("Error inserting bracket:", error);
-      return NextResponse.json(
-        { error: "Failed to save bracket" },
-        { status: 500 }
-      );
+      if (existingFinalBracket) {
+        return NextResponse.json(
+          { error: "Final bracket already exists for this event" },
+          { status: 409 }
+        );
+      }
     }
 
-    return NextResponse.json({ data });
+    // Insert the new bracket
+    const { error } = await supabase.from("user_brackets").insert({
+      user_id: user.id,
+      event_key,
+      bracket_data,
+      is_final: is_final || false,
+    });
+
+    if (error) throw error;
+
+    return NextResponse.json({ message: "Bracket submitted successfully" });
   } catch (error) {
-    console.error("Error in bracket submission:", error);
+    console.error("Error submitting bracket:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to submit bracket" },
       { status: 500 }
     );
   }

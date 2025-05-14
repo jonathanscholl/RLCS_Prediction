@@ -67,6 +67,20 @@ export default function Navbar() {
                             <span className="text-xl font-bold text-base-content">RLCS Predictions</span>
                         </button>
                     </div>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => router.push('/events')}
+                            className="p-2 rounded-full hover:bg-base-200 transition-colors"
+                        >
+                            <span className="text-xl font-bold text-base-content">Events</span>
+                        </button>
+                        <button
+                            onClick={() => router.push('/leaderboard')}
+                            className="p-2 rounded-full hover:bg-base-200 transition-colors"
+                        >
+                            <span className="text-xl font-bold text-base-content">Leaderboard</span>
+                        </button>
+                    </div>
                     <button
                         onClick={() => router.push('/auth')}
                         className="btn btn-ghost btn-circle"

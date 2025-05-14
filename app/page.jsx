@@ -71,7 +71,7 @@ export default async function Home() {
 
           {/* Leaderboard */}
           <div className="lg:col-span-1">
-            <Leaderboard />
+            <Leaderboard limit={3} />
           </div>
         </div>
       </div>

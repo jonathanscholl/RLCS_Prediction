@@ -32,6 +32,21 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
     const team1Bg = '#2b95c6';
     const team2Bg = '#d4500b';
 
+    // Check if both teams are present and not placeholder text
+    const isPlaceholder = (team) => {
+        if (!team) return true;
+        const placeholderPatterns = [
+            /^Winner of .*/i,
+            /^Loser of .*/i,
+            /^TBD$/i,
+            /^$/
+        ];
+        return placeholderPatterns.some(pattern => pattern.test(team));
+    };
+
+    const bothTeamsPresent = team1 && team2 && !isPlaceholder(team1) && !isPlaceholder(team2);
+    const canInputScores = bothTeamsPresent && !readOnly;
+
     return (
         <div className="space-y-2">
             {/* Team 1 Row */}
@@ -44,8 +59,8 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     />
                 </div>
                 <div className={`flex items-center rounded w-60 h-16 px-2 relative transition-colors`} style={{ background: team1Bg }}>
-                    <span className={` text-white text-xl flex items-center`}>
-                        {team1}
+                    <span className={`text-white text-xl flex items-center`}>
+                        {team1 || 'TBD'}
                     </span>
                     {teamLost(team1Won) && <div className="absolute inset-0 bg-opacity-30 rounded" />}
                 </div>
@@ -53,10 +68,10 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     type="number"
                     min="0"
                     max={maxScore}
-                    className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team1Won)}`}
+                    className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team1Won)} ${!canInputScores ? 'opacity-50 cursor-not-allowed' : ''}`}
                     value={score1}
-                    onChange={(e) => onScoreChange(0, e.target.value)}
-                    readOnly={readOnly}
+                    onChange={(e) => canInputScores && onScoreChange(0, e.target.value)}
+                    readOnly={!canInputScores}
                 />
             </div>
 
@@ -70,8 +85,8 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     />
                 </div>
                 <div className={`flex items-center rounded w-60 h-16 px-2 relative transition-colors`} style={{ background: team2Bg }}>
-                    <span className={` text-white text-xl flex items-center`}>
-                        {team2}
+                    <span className={`text-white text-xl flex items-center`}>
+                        {team2 || 'TBD'}
                     </span>
                     {teamLost(team2Won) && <div className="absolute inset-0 bg-opacity-30 rounded" />}
                 </div>
@@ -79,10 +94,10 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     type="number"
                     min="0"
                     max={maxScore}
-                    className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team2Won)}`}
+                    className={`w-16 h-16 text-center text-2xl ${getScoreBoxStyles(team2Won)} ${!canInputScores ? 'opacity-50 cursor-not-allowed' : ''}`}
                     value={score2}
-                    onChange={(e) => onScoreChange(1, e.target.value)}
-                    readOnly={readOnly}
+                    onChange={(e) => canInputScores && onScoreChange(1, e.target.value)}
+                    readOnly={!canInputScores}
                 />
             </div>
 
@@ -90,6 +105,13 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
             {(team1Score + team2Score > maxScore * 2 - 1) && (
                 <div className="text-red-500 text-sm mt-1">
                     Invalid score: Games are best of {maxScore * 2 - 1} (maximum {maxScore * 2 - 1} games total)
+                </div>
+            )}
+            {!bothTeamsPresent && (
+                <div className="text-yellow-500 text-sm mt-1">
+                    {isPlaceholder(team1) || isPlaceholder(team2)
+                        ? 'Waiting for teams to advance from previous round'
+                        : 'Both teams must be present to input scores'}
                 </div>
             )}
         </div>
@@ -133,7 +155,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
  * @param {Function} props.onMatchUpdate - Callback when a match is updated
  * @param {boolean} props.readOnly - Whether the component is read-only
  */
-function BracketRound({ title, matches, onMatchUpdate, readOnly = false }) {
+function BracketRound({ title, matches, onMatchUpdate, readOnly = false, adminMode = false }) {
     return (
         <div className="space-y-4">
             <div className="bg-gray-900 text-white py-1 px-2 text-center">
@@ -154,6 +176,7 @@ function BracketRound({ title, matches, onMatchUpdate, readOnly = false }) {
                         onMatchUpdate(index, newMatch);
                     }}
                     readOnly={readOnly}
+                    adminMode={adminMode}
                 />
             ))}
         </div>
@@ -263,7 +286,7 @@ function advanceTeam(data, groupKey, round, index, winner, loser, winnerLogo, lo
  * @param {Function} props.updateBracket - Function to update bracket data
  * @param {boolean} props.readOnly - Whether the component is read-only
  */
-function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
+function BracketGrid({ groupKey, data, updateBracket, readOnly = false, adminMode = false }) {
     const handleMatchUpdate = (round, index, newMatch) => {
         const updated = [...data[round]];
         updated[index] = newMatch;
@@ -303,6 +326,7 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
                     matches={data.upperQuarterfinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', i, match)}
                     readOnly={readOnly}
+                    adminMode={adminMode}
                 />
                 <div className="flex justify-center flex-grow">
                     <BracketRound
@@ -310,6 +334,7 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
                         matches={data.upperSemifinals}
                         onMatchUpdate={(i, match) => handleMatchUpdate('upperSemifinals', i, match)}
                         readOnly={readOnly}
+                        adminMode={adminMode}
                     />
                 </div>
                 <div className="flex justify-center">
@@ -318,6 +343,7 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
                         matches={data.qualified}
                         onMatchUpdate={(i, match) => handleMatchUpdate('qualified', i, match)}
                         readOnly={readOnly}
+                        adminMode={adminMode}
                     />
                 </div>
             </div>
@@ -329,6 +355,7 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
                     matches={data.lowerQuarterfinals}
                     onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
                     readOnly={readOnly}
+                    adminMode={adminMode}
                 />
                 <div className="flex justify-center flex-grow">
                     <BracketRound
@@ -336,6 +363,7 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
                         matches={data.lowerSemifinals}
                         onMatchUpdate={(i, match) => handleMatchUpdate('lowerSemifinals', i, match)}
                         readOnly={readOnly}
+                        adminMode={adminMode}
                     />
                 </div>
                 <div className="flex justify-center">
@@ -344,6 +372,7 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false }) {
                         matches={data.lowerFinal}
                         onMatchUpdate={(i, match) => handleMatchUpdate('lowerFinal', i, match)}
                         readOnly={readOnly}
+                        adminMode={adminMode}
                     />
                 </div>
             </div>
@@ -415,7 +444,7 @@ function BracketColumn({ label, matches, onMatchUpdate, readOnly = false }) {
     );
 }
 
-function ChampionModal({ isOpen, onClose, champion }) {
+function ChampionModal({ isOpen, onClose, champion, adminMode = false }) {
     const [showConfetti, setShowConfetti] = useState(false);
     const [windowSize, setWindowSize] = useState({
         width: typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -442,10 +471,12 @@ function ChampionModal({ isOpen, onClose, champion }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const handleBracketSubmit = async (event_key, bracketData) => {
+    const handleBracketSubmit = async (event_key, bracketData, isFinal = false) => {
         // Show confirmation dialog first
         const confirmed = window.confirm(
-            "Are you sure you want to submit your bracket? You will not be able to make changes after submission."
+            isFinal
+                ? "Are you sure you want to submit this as the final bracket? This action cannot be undone."
+                : "Are you sure you want to submit your bracket? You will not be able to make changes after submission."
         );
 
         if (!confirmed) {
@@ -469,7 +500,8 @@ function ChampionModal({ isOpen, onClose, champion }) {
                 },
                 body: JSON.stringify({
                     event_key,
-                    bracket_data: bracketData
+                    bracket_data: bracketData,
+                    is_final: isFinal
                 })
             });
 
@@ -485,13 +517,20 @@ function ChampionModal({ isOpen, onClose, champion }) {
             }
 
             // Show success message
-            alert('Bracket submitted successfully! Remember, you cannot make changes after submission.');
+            alert(isFinal
+                ? 'Final bracket submitted successfully!'
+                : 'Bracket submitted successfully! Remember, you cannot make changes after submission.'
+            );
             onClose(); // Close the modal after successful submission
         } catch (error) {
             console.error('Error submitting bracket:', error);
             alert('Failed to submit bracket. Please try again.');
         }
     }
+
+    const handleAdminAction = () => {
+        handleBracketSubmit(window.event_key, window.bracketData, true);
+    };
 
     if (!isOpen) return null;
 
@@ -529,11 +568,19 @@ function ChampionModal({ isOpen, onClose, champion }) {
                             Close
                         </button>
                         <button
-                            onClick={() => handleBracketSubmit(event_key, bracketData)}
+                            onClick={() => handleBracketSubmit(window.event_key, window.bracketData, false)}
                             className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-green-400 hover:text-black transition-colors"
                         >
                             Submit your bracket
                         </button>
+                        {adminMode && (
+                            <button
+                                onClick={handleAdminAction}
+                                className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-blue-400 hover:text-black transition-colors"
+                            >
+                                Submit Final Bracket
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -541,7 +588,7 @@ function ChampionModal({ isOpen, onClose, champion }) {
     );
 }
 
-function PlayoffBracket({ data, updateBracket, readOnly = false }) {
+function PlayoffBracket({ data, updateBracket, readOnly = false, adminMode = false }) {
     const [showChampionModal, setShowChampionModal] = useState(false);
 
     // Add back the useEffect to handle initial playoff bracket population
@@ -672,6 +719,7 @@ function PlayoffBracket({ data, updateBracket, readOnly = false }) {
                 isOpen={showChampionModal}
                 onClose={() => setShowChampionModal(false)}
                 champion={data.champion?.[0]?.[0]}
+                adminMode={adminMode}
             />
         </div>
     );
@@ -766,7 +814,7 @@ function getStandingsFromBracket(bracketData) {
  *
  * This component is now reusable for any bracketData shape matching the above.
  */
-export default function TournamentBracket({ bracketData, updateBracket, event_key, readOnly = false }) {
+export default function TournamentBracket({ bracketData, updateBracket, event_key, readOnly = false, adminMode = false }) {
     const standings = getStandingsFromBracket(bracketData);
     const championDetermined = Boolean(bracketData.playoffs.champion?.[0]?.[0]);
     const [activeView, setActiveView] = useState('groupA');
@@ -806,6 +854,7 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
                     data={bracketData.groupA}
                     updateBracket={updateBracket}
                     readOnly={readOnly}
+                    adminMode={adminMode}
                 />
             </div>
         </div>
@@ -871,12 +920,23 @@ export default function TournamentBracket({ bracketData, updateBracket, event_ke
                 data={bracketData.playoffs}
                 updateBracket={updateBracket}
                 readOnly={readOnly}
+                adminMode={adminMode}
             />
         </div>
     );
 
     return (
         <div className="relative">
+            {adminMode && (
+                <div className="absolute top-0 right-0 z-50 m-4">
+                    <div className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                        </svg>
+                        <span className="font-bold">Admin Mode</span>
+                    </div>
+                </div>
+            )}
             <div className="relative p-8 text-white">
                 {activeView === 'groupA' && renderGroupA()}
                 {activeView === 'groupB' && renderGroupB()}

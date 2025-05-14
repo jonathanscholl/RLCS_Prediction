@@ -48,12 +48,14 @@ export default function BracketPage() {
     const searchParams = useSearchParams();
     const eventKey = searchParams.get('event');
     const fromProfile = searchParams.get('from') === 'profile';
+    const adminMode = searchParams.get('admin_mode') === 'true';
 
     const [bracketData, setBracketData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isReadOnly, setIsReadOnly] = useState(false);
 
     useEffect(() => {
+
         async function loadBracketData() {
             try {
                 // Only check localStorage if coming from profile page
@@ -154,6 +156,7 @@ export default function BracketPage() {
                 updateBracket={updateBracket}
                 event_key={eventKey}
                 readOnly={isReadOnly}
+                adminMode={adminMode}
             />
         </div>
     );

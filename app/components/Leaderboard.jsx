@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabaseClient';
+import Link from 'next/link';
 import Image from 'next/image';
 
-export default function Leaderboard() {
+export default function Leaderboard({ limit = 3 }) {
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -18,7 +19,7 @@ export default function Leaderboard() {
                 .from('profiles')
                 .select('username, profile_picture, score')
                 .order('score', { ascending: false })
-                .limit(10);
+                .limit(limit);
 
             if (error) throw error;
             setProfiles(data || []);
@@ -30,14 +31,21 @@ export default function Leaderboard() {
         }
     };
 
+    const getRankDisplay = (index) => {
+        if (index === 0) return <Image src="/ssl.png" alt="SSL" width={48} height={48} />;
+        if (index === 1) return <Image src="/gc3.png" alt="GC3" width={48} height={48} />;
+        if (index === 2) return <Image src="/gc2.png" alt="GC2" width={48} height={48} />;
+        return index + 1;
+    };
+
     if (loading) {
         return (
             <div className="card bg-base-100 shadow-xl">
                 <div className="card-body">
-                    <h2 className="card-title">Leaderboard</h2>
-                    <div className="flex justify-center items-center h-32">
-                        <span className="loading loading-spinner loading-lg"></span>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="card-title">Leaderboard</h2>
                     </div>
+                    <div className="skeleton h-32 w-full"></div>
                 </div>
             </div>
         );
@@ -47,11 +55,10 @@ export default function Leaderboard() {
         return (
             <div className="card bg-base-100 shadow-xl">
                 <div className="card-body">
-                    <h2 className="card-title">Leaderboard</h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="card-title">Leaderboard</h2>
+                    </div>
                     <div className="alert alert-error">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
                         <span>{error}</span>
                     </div>
                 </div>
@@ -62,7 +69,14 @@ export default function Leaderboard() {
     return (
         <div className="card bg-base-100 shadow-xl">
             <div className="card-body">
-                <h2 className="card-title">Leaderboard</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="card-title">Leaderboard</h2>
+                    {limit === 3 && (
+                        <Link href="/leaderboard" className="btn btn-ghost btn-sm">
+                            View All
+                        </Link>
+                    )}
+                </div>
                 <div className="overflow-x-auto">
                     <table className="table">
                         <thead>
@@ -75,21 +89,15 @@ export default function Leaderboard() {
                         <tbody>
                             {profiles.map((profile, index) => (
                                 <tr key={profile.username} className="hover">
-                                    <td className="font-bold">{index + 1}</td>
+                                    <td className="font-bold">{getRankDisplay(index)}</td>
                                     <td>
                                         <div className="flex items-center gap-3">
                                             <div className="avatar">
-                                                <div className="w-8 h-8 rounded-full">
+                                                <div className="mask mask-squircle w-8 h-8">
                                                     {profile.profile_picture ? (
-                                                        <Image
-                                                            src={profile.profile_picture}
-                                                            alt={profile.username}
-                                                            fill
-                                                            className="object-contain"
-                                                            sizes="32px"
-                                                        />
+                                                        <img src={profile.profile_picture} alt={profile.username} />
                                                     ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-base-300 flex items-center justify-center">
+                                                        <div className="bg-base-300 flex items-center justify-center">
                                                             <span className="text-lg">👤</span>
                                                         </div>
                                                     )}
@@ -98,7 +106,7 @@ export default function Leaderboard() {
                                             <div className="font-bold">{profile.username}</div>
                                         </div>
                                     </td>
-                                    <td className="font-bold text-primary">{profile.score || 0}</td>
+                                    <td>{profile.score || 0}</td>
                                 </tr>
                             ))}
                         </tbody>
