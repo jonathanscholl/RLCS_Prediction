@@ -28,7 +28,7 @@ export default async function Home() {
             <p className="text-lg opacity-80 mb-8">
               Predict the RLCS playoff bracket, compete with friends, and see who comes out on top!
             </p>
-            <Link href="/regions">
+            <Link href="/events">
               <button className="btn btn-primary btn-lg">
                 View All Events
               </button>
@@ -47,10 +47,10 @@ export default async function Home() {
               href={`/bracket?event=${event.key}`}
               className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300"
             >
-              <div className="card-body">
+              <div className="card-body flex flex-col items-center">
                 <h3 className="card-title text-xl">{event.name}</h3>
                 <p className="text-base-content/70">{event.region}</p>
-                <div className="card-actions justify-end mt-4">
+                <div className="card-actions justify-center mt-4">
                   <button className="btn btn-primary btn-sm">
                     Predict now
                   </button>
