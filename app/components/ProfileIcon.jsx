@@ -27,7 +27,7 @@ export default function ProfileIcon() {
     if (isLoading) {
         return (
             <div className="fixed top-4 right-4 z-50">
-                <button className="p-2 rounded-full bg-gray-700">
+                <button className="p-2 rounded-full bg-gray-100">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-6 w-6 animate-spin"

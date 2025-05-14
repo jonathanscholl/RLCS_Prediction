@@ -563,17 +563,17 @@ function PlayoffBracket({ data, updateBracket, readOnly = false }) {
         const groupBLowerFinal = completeData.groupB?.lowerFinal?.[0] || [];
         const hasLowerFinalTeams = groupALowerFinal[0] && groupALowerFinal[1] && groupBLowerFinal[0] && groupBLowerFinal[1];
 
-        // Update upper quarterfinals if we have qualified teams
-        if (hasQualifiedTeams) {
+        // Update upper quarterfinals if we have qualified teams and the matches are empty
+        if (hasQualifiedTeams && (!data.upperQuarterfinals || data.upperQuarterfinals.every(match => !match[0] || !match[1]))) {
             console.log('Updating upper quarterfinals with qualified teams');
             updateBracket('playoffs', 'upperQuarterfinals', [
-                [groupAQualified[0], groupBQualified[1], groupAQualified[2], groupBQualified[3], '', ''], // Group A Seed 1 vs Group B Seed 2
-                [groupAQualified[1], groupBQualified[0], groupAQualified[3], groupBQualified[2], '', '']  // Group A Seed 2 vs Group B Seed 1
+                [groupAQualified[0], groupBQualified[1], groupAQualified[2], groupBQualified[3], '', ''],
+                [groupAQualified[1], groupBQualified[0], groupAQualified[3], groupBQualified[2], '', '']
             ]);
         }
 
-        // Update lower round 1 if we have lower final teams
-        if (hasLowerFinalTeams) {
+        // Update lower round 1 if we have lower final teams and the matches are empty
+        if (hasLowerFinalTeams && (!data.lowerRound1 || data.lowerRound1.every(match => !match[0] || !match[1]))) {
             console.log('Updating lower round 1 with lower final teams');
             updateBracket('playoffs', 'lowerRound1', [
                 [groupALowerFinal[0], groupBLowerFinal[1], groupALowerFinal[2], groupBLowerFinal[3], '', ''],

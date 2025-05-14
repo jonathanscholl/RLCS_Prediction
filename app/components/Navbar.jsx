@@ -27,13 +27,13 @@ export default function Navbar() {
 
     if (isLoading) {
         return (
-            <nav className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="fixed top-4 left-1/2 -translate-x-1/2 bg-base-100/80 backdrop-blur-md rounded-full shadow-lg z-50 w-[95%] max-w-7xl">
+                <div className="px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex-shrink-0">
-                            <span className="text-white text-xl font-bold">RLCS Predictions</span>
+                            <span className="text-base-content text-xl font-bold">RLCS Predictions</span>
                         </div>
-                        <div className="p-2 rounded-full bg-gray-700">
+                        <div className="p-2 rounded-full bg-base-200">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-6 w-6 animate-spin"
@@ -56,20 +56,20 @@ export default function Navbar() {
     }
 
     return (
-        <nav className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className="fixed top-4 left-1/2 -translate-x-1/2 bg-base-100/80 backdrop-blur-md rounded-full shadow-lg z-50 w-[95%] max-w-7xl border-2">
+            <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     <div className="flex-shrink-0">
                         <button
                             onClick={() => router.push('/')}
-                            className="p-2 rounded-full hover:text-black transition-colors"
+                            className="p-2 rounded-full hover:bg-base-200 transition-colors"
                         >
-                            <span className="text-white text-xl font-bold">RLCS Predictions</span>
+                            <span className="text-xl font-bold text-base-content">RLCS Predictions</span>
                         </button>
                     </div>
                     <button
                         onClick={() => router.push('/auth')}
-                        className="p-2 rounded-full bg-gray-700 hover:bg-yellow-400 hover:text-black transition-colors"
+                        className="btn btn-ghost btn-circle"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"

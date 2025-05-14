@@ -25,7 +25,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${figtree.variable} font-sans bg-gray-900 min-h-screen`}>
+      <body className={`${figtree.variable} font-sans bg-base-200 min-h-screen`}>
         <Navbar />
         <main className="pt-16">
           {children}

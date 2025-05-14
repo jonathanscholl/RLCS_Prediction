@@ -18,7 +18,7 @@ export default function RegionsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white p-4 flex flex-col items-center justify-center">
+        <div className="min-h-screen text-primary p-4 flex flex-col items-center justify-center">
             <h1 className="text-3xl font-bold mb-8">Select a Region</h1>
             <div className="flex flex-row flex-wrap justify-center gap-4 mb-8">
                 {regionNames.map((r) => (
