@@ -18,8 +18,9 @@ import { supabase } from '@/app/utils/supabaseClient';
  * @param {Function} props.onScoreChange - Callback when score changes
  * @param {number} props.maxScore - Maximum score to win (3 for BO5, 4 for BO7)
  * @param {boolean} props.readOnly - Whether the component is read-only
+ * @param {boolean} props.hideInputs - Whether to hide the input fields
  */
-function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, maxScore = 3, readOnly = false }) {
+function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, maxScore = 3, readOnly = false, hideInputs = false }) {
     const team1Score = parseInt(score1);
     const team2Score = parseInt(score2);
     const team1Won = team1Score === maxScore;
@@ -72,6 +73,8 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     value={score1}
                     onChange={(e) => canInputScores && onScoreChange(0, e.target.value)}
                     readOnly={!canInputScores}
+                    onWheel={(e) => e.target.blur()}
+                    style={hideInputs ? { display: 'none' } : {}}
                 />
             </div>
 
@@ -98,6 +101,8 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
                     value={score2}
                     onChange={(e) => canInputScores && onScoreChange(1, e.target.value)}
                     readOnly={!canInputScores}
+                    onWheel={(e) => e.target.blur()}
+                    style={hideInputs ? { display: 'none' } : {}}
                 />
             </div>
 
@@ -130,8 +135,9 @@ function MatchDisplay({ team1, team2, team1Logo, team2Logo, score1 = '', score2 
  * @param {Function} props.onScoreChange - Callback when score changes
  * @param {boolean} props.isPlayoff - Whether this is a playoff match (BO7) or group stage match (BO5)
  * @param {boolean} props.readOnly - Whether the component is read-only
+ * @param {boolean} props.hideInputs - Whether to hide the input fields
  */
-function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, isPlayoff = false, readOnly = false }) {
+function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', onScoreChange, isPlayoff = false, readOnly = false, hideInputs = false }) {
     return (
         <MatchDisplay
             team1={team1}
@@ -143,6 +149,7 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
             onScoreChange={onScoreChange}
             maxScore={isPlayoff ? 4 : 3}
             readOnly={readOnly}
+            hideInputs={hideInputs}
         />
     );
 }
@@ -154,8 +161,12 @@ function Match({ team1, team2, team1Logo, team2Logo, score1 = '', score2 = '', o
  * @param {Array} props.matches - Array of matches in this round
  * @param {Function} props.onMatchUpdate - Callback when a match is updated
  * @param {boolean} props.readOnly - Whether the component is read-only
+ * @param {boolean} props.adminMode - Whether the component is in admin mode
+ * @param {boolean} props.hideInputs - Whether to hide the input fields
  */
-function BracketRound({ title, matches, onMatchUpdate, readOnly = false, adminMode = false }) {
+function BracketRound({ title, matches, onMatchUpdate, readOnly = false, adminMode = false, hideInputs = false }) {
+    // Determine if this is the QUALIFIED round (case-insensitive)
+    const isQualifiedRound = title.trim().toLowerCase() === 'qualified';
     return (
         <div className="space-y-4">
             <div className="bg-gray-900 text-white py-1 px-2 text-center">
@@ -175,8 +186,9 @@ function BracketRound({ title, matches, onMatchUpdate, readOnly = false, adminMo
                         newMatch[teamIndex + 4] = newScore;
                         onMatchUpdate(index, newMatch);
                     }}
-                    readOnly={readOnly}
+                    readOnly={readOnly || isQualifiedRound}
                     adminMode={adminMode}
+                    hideInputs={hideInputs}
                 />
             ))}
         </div>
@@ -285,6 +297,7 @@ function advanceTeam(data, groupKey, round, index, winner, loser, winnerLogo, lo
  * @param {Object} props.data - Bracket data for this group
  * @param {Function} props.updateBracket - Function to update bracket data
  * @param {boolean} props.readOnly - Whether the component is read-only
+ * @param {boolean} props.adminMode - Whether the component is in admin mode
  */
 function BracketGrid({ groupKey, data, updateBracket, readOnly = false, adminMode = false }) {
     const handleMatchUpdate = (round, index, newMatch) => {
@@ -295,6 +308,18 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false, adminMod
         const [team1, team2, logo1, logo2, score1, score2] = newMatch;
         const s1 = parseInt(score1);
         const s2 = parseInt(score2);
+
+        // Helper to check if a team is a placeholder
+        const isPlaceholder = (team) => {
+            if (!team) return true;
+            const placeholderPatterns = [
+                /^Winner of .*/i,
+                /^Loser of .*/i,
+                /^TBD$/i,
+                /^$/
+            ];
+            return placeholderPatterns.some(pattern => pattern.test(team));
+        };
 
         // Check if match is complete (best of 5)
         if ((s1 === 3 || s2 === 3) && (s1 <= 3 && s2 <= 3)) {
@@ -315,49 +340,123 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false, adminMod
                 false
             );
         }
+
+        // For qualified and lowerFinal rounds, advance teams if both are set and not placeholders
+        if ((round === 'qualified' || round === 'lowerFinal') && team1 && team2 && !isPlaceholder(team1) && !isPlaceholder(team2)) {
+            // For these rounds, both teams are considered 'winners' for playoff seeding
+            // We call advanceTeam for each team
+            advanceTeam(
+                data,
+                groupKey,
+                round,
+                index,
+                team1,
+                team2,
+                logo1,
+                logo2,
+                updateBracket,
+                false
+            );
+            advanceTeam(
+                data,
+                groupKey,
+                round,
+                index,
+                team2,
+                team1,
+                logo2,
+                logo1,
+                updateBracket,
+                false
+            );
+        }
     };
 
     return (
-        <div className="flex flex-col gap-6 w-full">
+        <div className="flex flex-col gap-10 w-full">
             {/* Upper Bracket */}
-            <div className="flex flex-row my-auto items-center">
-                <BracketRound
-                    title="UPPER QUARTERFINALS (BO5)"
-                    matches={data.upperQuarterfinals}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', i, match)}
-                    readOnly={readOnly}
-                    adminMode={adminMode}
-                />
-                <div className="flex justify-center flex-grow">
+            <div className="flex flex-row my-auto items-start relative justify-center mx-auto" style={{ minHeight: 520, width: 'fit-content' }}>
+                {/* All quarterfinals stacked vertically */}
+                <div className="flex flex-col gap-10 z-10">
                     <BracketRound
-                        title="UPPER SEMIFINALS (BO5)"
-                        matches={data.upperSemifinals}
-                        onMatchUpdate={(i, match) => handleMatchUpdate('upperSemifinals', i, match)}
+                        title="UPPER QUARTERFINALS (BO5)"
+                        matches={[data.upperQuarterfinals[0]]}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', 0, match)}
+                        readOnly={readOnly}
+                        adminMode={adminMode}
+                    />
+                    <BracketRound
+                        title="UPPER QUARTERFINALS (BO5)"
+                        matches={[data.upperQuarterfinals[1]]}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', 1, match)}
+                        readOnly={readOnly}
+                        adminMode={adminMode}
+                    />
+                    <BracketRound
+                        title="UPPER QUARTERFINALS (BO5)"
+                        matches={[data.upperQuarterfinals[2]]}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', 2, match)}
+                        readOnly={readOnly}
+                        adminMode={adminMode}
+                    />
+                    <BracketRound
+                        title="UPPER QUARTERFINALS (BO5)"
+                        matches={[data.upperQuarterfinals[3]]}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('upperQuarterfinals', 3, match)}
                         readOnly={readOnly}
                         adminMode={adminMode}
                     />
                 </div>
-                <div className="flex justify-center">
-                    <BracketRound
-                        title="QUALIFIED"
-                        matches={data.qualified}
-                        onMatchUpdate={(i, match) => handleMatchUpdate('qualified', i, match)}
-                        readOnly={readOnly}
-                        adminMode={adminMode}
-                    />
+
+                {/* Semifinals column, absolutely positioned and vertically centered between QFs */}
+                <div className="flex flex-col ml-24 w-[260px] relative" style={{ minHeight: 520 }}>
+                    <div style={{ position: 'absolute', top: '100px', left: 0, right: 0 }}>
+                        <BracketRound
+                            title="UPPER SEMIFINALS (BO5)"
+                            matches={[data.upperSemifinals[0]]}
+                            onMatchUpdate={(i, match) => handleMatchUpdate('upperSemifinals', 0, match)}
+                            readOnly={readOnly}
+                            adminMode={adminMode}
+                        />
+                    </div>
+                    <div style={{ position: 'absolute', top: '500px', left: 0, right: 0 }}>
+                        <BracketRound
+                            title="UPPER SEMIFINALS (BO5)"
+                            matches={[data.upperSemifinals[1]]}
+                            onMatchUpdate={(i, match) => handleMatchUpdate('upperSemifinals', 1, match)}
+                            readOnly={readOnly}
+                            adminMode={adminMode}
+                        />
+                    </div>
+                </div>
+
+                {/* Qualified section, vertically centered between the two semifinals */}
+                <div className="flex flex-col justify-center ml-50" style={{ minHeight: 520 }}>
+                    <div style={{ marginTop: '300px' }}>
+                        <BracketRound
+                            title="QUALIFIED"
+                            matches={data.qualified}
+                            onMatchUpdate={(i, match) => handleMatchUpdate('qualified', i, match)}
+                            readOnly={readOnly}
+                            adminMode={adminMode}
+                            hideInputs={true}
+                        />
+                    </div>
                 </div>
             </div>
 
             {/* Lower Bracket */}
-            <div className="flex flex-row my-20 items-center">
-                <BracketRound
-                    title="LOWER QUARTERFINALS (BO5)"
-                    matches={data.lowerQuarterfinals}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
-                    readOnly={readOnly}
-                    adminMode={adminMode}
-                />
-                <div className="flex justify-center flex-grow">
+            <div className="flex flex-row my-20 items-center justify-center mx-auto" style={{ minHeight: 520, width: 'fit-content' }}>
+                <div className="flex flex-col gap-10 z-10">
+                    <BracketRound
+                        title="LOWER QUARTERFINALS (BO5)"
+                        matches={data.lowerQuarterfinals}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('lowerQuarterfinals', i, match)}
+                        readOnly={readOnly}
+                        adminMode={adminMode}
+                    />
+                </div>
+                <div className="flex flex-col ml-24 w-[260px] relative" style={{ minHeight: 520 }}>
                     <BracketRound
                         title="LOWER SEMIFINALS (BO5)"
                         matches={data.lowerSemifinals}
@@ -366,14 +465,17 @@ function BracketGrid({ groupKey, data, updateBracket, readOnly = false, adminMod
                         adminMode={adminMode}
                     />
                 </div>
-                <div className="flex justify-center">
-                    <BracketRound
-                        title="QUALIFIED"
-                        matches={data.lowerFinal}
-                        onMatchUpdate={(i, match) => handleMatchUpdate('lowerFinal', i, match)}
-                        readOnly={readOnly}
-                        adminMode={adminMode}
-                    />
+                <div className="flex flex-col justify-center ml-50" style={{ minHeight: 520 }}>
+                    <div style={{ marginTop: '-150px' }}>
+                        <BracketRound
+                            title="QUALIFIED"
+                            matches={data.lowerFinal}
+                            onMatchUpdate={(i, match) => handleMatchUpdate('lowerFinal', i, match)}
+                            readOnly={readOnly}
+                            adminMode={adminMode}
+                            hideInputs={true}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -416,7 +518,7 @@ function PlayoffRound({ title, matches, onMatchUpdate }) {
 
 function BracketColumn({ label, matches, onMatchUpdate, readOnly = false }) {
     return (
-        <div className="flex flex-col items-center min-w-[200px]">
+        <div className="flex flex-col items-center flex-1">
             <div className="bg-gray-900 text-white font-bold px-4 py-2 mb-2 rounded text-center w-full text-xs uppercase tracking-wider">
                 {label}
             </div>
@@ -665,14 +767,18 @@ function PlayoffBracket({ data, updateBracket, readOnly = false, adminMode = fal
     };
 
     return (
-        <div className="flex flex-row w-full justify-center items-center gap-12">
-            {/* Lower Round 1 - far left */}
-            <BracketColumn
-                label="LOWER ROUND 1 (BO7)"
-                matches={data.lowerRound1}
-                onMatchUpdate={(i, match) => handleMatchUpdate('lowerRound1', i, match)}
-                readOnly={readOnly}
-            />
+        <div className="grid grid-cols-4 w-full gap-8 items-start" style={showChampionModal ? {} : { width: '100%' }}>
+            {/* Lower Round 1 */}
+            <div className="flex flex-col justify-center">
+                <div style={{ marginTop: '458px' }}>
+                    <BracketColumn
+                        label="LOWER ROUND 1 (BO7)"
+                        matches={data.lowerRound1}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('lowerRound1', i, match)}
+                        readOnly={readOnly}
+                    />
+                </div>
+            </div>
             {/* Quarterfinals: upper on top, lower below */}
             <div className="flex flex-col justify-center items-center gap-16">
                 <BracketColumn
@@ -688,21 +794,28 @@ function PlayoffBracket({ data, updateBracket, readOnly = false, adminMode = fal
                     readOnly={readOnly}
                 />
             </div>
-            {/* Semifinals, Grand Final, Champion - each in their own column */}
-            <div className="flex flex-row gap-12 items-center">
-                <BracketColumn
-                    label="SEMIFINALS (TOP 4, BO7)"
-                    matches={data.semifinals}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('semifinals', i, match)}
-                    readOnly={readOnly}
-                />
-                <BracketColumn
-                    label="GRAND FINAL (BO7)"
-                    matches={data.grandFinal}
-                    onMatchUpdate={(i, match) => handleMatchUpdate('grandFinal', i, match)}
-                    readOnly={readOnly}
-                />
-                <div className="flex flex-col items-center justify-center min-w-[200px]">
+            {/* Semifinals */}
+            <div className="flex flex-col justify-center items-center">
+                <div style={{ marginTop: '200px' }}>
+                    <BracketColumn
+                        label="SEMIFINALS (TOP 4, BO7)"
+                        matches={data.semifinals}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('semifinals', i, match)}
+                        readOnly={readOnly}
+                    />
+                </div>
+            </div>
+            {/* Grand Final and Champion */}
+            <div className="flex flex-col justify-center items-center">
+                <div style={{ marginTop: '300px' }}>
+                    <BracketColumn
+                        label="GRAND FINAL (BO7)"
+                        matches={data.grandFinal}
+                        onMatchUpdate={(i, match) => handleMatchUpdate('grandFinal', i, match)}
+                        readOnly={readOnly}
+                    />
+                </div>
+                <div className="flex flex-col items-center mt-8">
                     {data.champion && data.champion[0] && data.champion[0][0] && (
                         <button
                             onClick={() => setShowChampionModal(true)}

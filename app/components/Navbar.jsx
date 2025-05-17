@@ -80,6 +80,12 @@ export default function Navbar() {
                         >
                             <span className="text-xl font-bold text-base-content">Leaderboard</span>
                         </button>
+                        <button
+                            onClick={() => router.push('/groups')}
+                            className="p-2 rounded-full hover:bg-base-200 transition-colors"
+                        >
+                            <span className="text-xl font-bold text-base-content">Groups</span>
+                        </button>
                     </div>
                     <button
                         onClick={() => router.push('/auth')}

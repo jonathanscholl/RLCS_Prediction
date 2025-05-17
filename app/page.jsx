@@ -1,23 +1,98 @@
+'use client';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { supabase } from './utils/supabaseClient';
 import Leaderboard from './components/Leaderboard';
 
-async function getTrendingEvents() {
-  const { data: events, error } = await supabase
-    .from('events')
-    .select('*')
-    .limit(3);
+export default function Home() {
+  const [trendingEvents, setTrendingEvents] = useState([]);
+  const [myGroups, setMyGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (error) {
-    console.error('Error fetching events:', error);
-    return [];
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch trending events
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .limit(3);
+
+      if (eventsError) throw eventsError;
+
+      // Get user's profile
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        // Fetch groups owned by the user
+        const { data: ownedGroups, error: ownedError } = await supabase
+          .from('groups')
+          .select(`id, name, join_link, owner!inner(id, username, profile_picture)`)
+          .eq('owner', profileData.id);
+
+        if (ownedError) throw ownedError;
+
+        // Fetch groups where user is a member
+        const { data: memberGroups, error: memberError } = await supabase
+          .from('group_members')
+          .select(`
+                        group:group_id (
+                            id,
+                            name,
+                            join_link,
+                            owner:owner (
+                                id,
+                                username,
+                                profile_picture
+                            )
+                        )
+                    `)
+          .eq('profile_id', profileData.id);
+
+        if (memberError) throw memberError;
+
+        // Combine and format the groups
+        const formattedOwnedGroups = ownedGroups || [];
+        const formattedMemberGroups = (memberGroups || []).map(mg => mg.group);
+
+        // Remove any duplicates
+        const allGroups = [...formattedOwnedGroups];
+        formattedMemberGroups.forEach(group => {
+          if (!allGroups.some(g => g.id === group.id)) {
+            allGroups.push(group);
+          }
+        });
+
+        setMyGroups(allGroups);
+      }
+
+      setTrendingEvents(events || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
   }
-
-  return events;
-}
-
-export default async function Home() {
-  const trendingEvents = await getTrendingEvents();
 
   return (
     <main className="min-h-screen bg-base-200">
@@ -67,11 +142,52 @@ export default async function Home() {
                 </div>
               </div>
             </div>
+
+            {/* My Groups Section */}
+            {myGroups.length > 0 && (
+              <div className="card bg-base-100 shadow-xl mt-8">
+                <div className="card-body">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="card-title">My Groups</h2>
+                    <Link href="/groups" className="btn btn-ghost btn-sm">
+                      View All
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myGroups.slice(0, 4).map((group) => (
+                      <Link
+                        key={group.id}
+                        href={`/groups/${group.id}`}
+                        className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300"
+                      >
+                        <div className="card-body">
+                          <h3 className="card-title text-xl">{group.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <div className="avatar">
+                              <div className="mask mask-squircle w-8 h-8">
+                                {group.owner?.profile_picture ? (
+                                  <img src={group.owner.profile_picture} alt={group.owner.username} />
+                                ) : (
+                                  <div className="bg-base-300 flex items-center justify-center">
+                                    <span className="text-lg">👤</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-sm opacity-70">Created by {group.owner?.username}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Leaderboard */}
           <div className="lg:col-span-1">
-            <Leaderboard limit={3} />
+            <Leaderboard limit={10} />
           </div>
         </div>
       </div>
